@@ -15,3 +15,9 @@ The current version is just a backup. No documentation will be provided until a 
 - Localization file
 - Git: settings sample
 - Better folder selection dialog
+
+**Dev Requirements:**
+They're not included, yet to build the launcher you'd need:
+- Awesomium NetWrapper Unofficial fix 1.7.5.01
+- Costura Fody 3.3.3 or later (and, therefore, Fody 4.2.1 or later)
+- Newtonsoft Json 12.0.3
