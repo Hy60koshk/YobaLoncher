@@ -8,16 +8,15 @@ The current version is just a backup. No documentation will be provided until a 
 - MD5 check of the given filelist for further update
 - Self-update
 - CuStOm DeSiGn
+- Localization files
 - Offline mode (or, more like, diagnostic mode, since the only function the loncher will serve then is the filecheck)
 
 **TODO:**
 - File check summary and the ability to deselect the optional files
-- Localization file
 - Git: settings sample
 - Better folder selection dialog
 
 **Dev Requirements:**
 They're not included, yet to build the launcher you'd need:
-- Awesomium NetWrapper Unofficial fix 1.7.5.01
-- Costura Fody 3.3.3 or later (and, therefore, Fody 4.2.1 or later)
+- Costura Fody (latest, which implies VS 2019)
 - Newtonsoft Json
