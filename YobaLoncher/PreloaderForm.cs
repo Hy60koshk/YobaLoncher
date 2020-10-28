@@ -1,31 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
-using Newtonsoft.Json.Linq;
 
 namespace YobaLoncher {
 	public partial class PreloaderForm : Form {
 
 		private DownloadProgressTracker downloadProgressTracker_;
 		private WebClient wc_;
-		private System.Security.Cryptography.MD5 md5_;
+		private MainForm oldMainForm_ = null;
 		private int progressBarLeft_ = 0;
+		public const string IMGPATH = @"loncherData\images\";
+		public const string UPDPATH = @"loncherData\updates\";
+		public const string FNTPATH = @"loncherData\fonts\";
+		public const string CFGFILE = @"loncherData\loncher.cfg";
 
-		public PreloaderForm() {
+		public PreloaderForm() : this(null) { }
+
+		public PreloaderForm(MainForm oldMainForm) {
 			InitializeComponent();
+			oldMainForm_ = oldMainForm;
 			this.BackgroundImageLayout = ImageLayout.Stretch;
-			string bgfile = @"images\loncherbg.png";
+			string bgfile = IMGPATH + @"loncherbg.png";
 			if (File.Exists(bgfile)) {
 				try {
 					this.BackgroundImage = new Bitmap(bgfile);
@@ -35,13 +38,8 @@ namespace YobaLoncher {
 				}
 			}
 			wc_ = new WebClient();
-			md5_ = System.Security.Cryptography.MD5.Create();
-		}
-
-		public static void ErrorAndKill(string msg) {
-			if (new YobaDialog(msg).ShowDialog() != DialogResult.Ignore) {
-				Application.Exit();
-			}
+			wc_.Encoding = Encoding.UTF8;
+			Text = Locale.Get("PreloaderTitle");
 		}
 
 		private void PreloaderForm_Load(object sender, EventArgs e) {
@@ -77,7 +75,7 @@ namespace YobaLoncher {
 				}
 			}
 			catch (Exception ex) {
-				ErrorAndKill(ex.Message);
+				YU.ErrorAndKill(ex.Message);
 			}
 			return paths;
 		}
@@ -88,66 +86,69 @@ namespace YobaLoncher {
 		private void incProgress(int d) {
 			progressBar1.Value += d;
 		}
-		private bool checkFileMD5(string path, string correctHash) {
-			if (File.Exists(path)) {
-				byte[] hash;
-				using (FileStream stream = File.OpenRead(path)) {
-					hash = md5_.ComputeHash(stream);
-				}
-				StringBuilder hashSB = new StringBuilder(hash.Length);
-				for (int i = 0; i < hash.Length; i++) {
-					hashSB.Append(hash[i].ToString("X2"));
-				}
-				string strHash = hashSB.ToString();
-				if (correctHash.ToUpper().Equals(strHash)) {
-					return true;
-				}
-			}
-			return false;
-		}
 
 		private void OnDownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e) {
 			downloadProgressTracker_.SetProgress(e.BytesReceived, e.TotalBytesToReceive);
 			progressBar1.Value = e.ProgressPercentage;
 		}
 
-		private static bool stringHasText(string s) {
-			return s != null && s.Length > 0;
-		}
-
 		private async Task loadFile(string src, string filename) {
 			progressBarLeft_ = progressBar1.Value;
-			loadingLabel.Text = "Updating Yoba Löncher - Downloading " + filename + " ...";
+			loadingLabel.Text = string.Format(Locale.Get("AllFilesIntact"), filename);
 			await wc_.DownloadFileTaskAsync(src, filename);
 			downloadProgressTracker_.Reset();
 			progressBar1.Value = progressBarLeft_ + 5;
 		}
-		private async Task<bool> assertFile(FileInfo fi) {
-			if (fi != null && stringHasText(fi.Path) && stringHasText(fi.Url)) {
-				if (!File.Exists(fi.Path)
-					|| (stringHasText(fi.Hash) && !checkFileMD5(fi.Path, fi.Hash))) {
-					await loadFile(fi.Url, fi.Path);
-				}
-				return true;
-			}
-			return false;
-		}
+
 		private async Task<bool> assertFile(FileInfo fi, string dir) {
-			if (fi != null && stringHasText(fi.Path) && stringHasText(fi.Url)) {
-				string path = dir + "\\" + fi.Path;
-				if (!File.Exists(path)
-					|| (stringHasText(fi.Hash) && !checkFileMD5(path, fi.Hash))) {
-					await loadFile(fi.Url, path);
+			if (fi != null && YU.stringHasText(fi.Path) && YU.stringHasText(fi.Url)) {
+				if (!FileChecker.CheckFileMD5(dir, fi)) {
+					await loadFile(fi.Url, dir + fi.Path);
 				}
 				return true;
 			}
 			return false;
 		}
 		private bool assertOfflineFile(FileInfo fi, string dir) {
-			if (fi != null && stringHasText(fi.Path) && File.Exists(dir + "\\" + fi.Path)) {
+			if (fi != null && YU.stringHasText(fi.Path) && File.Exists(dir + fi.Path)) {
 				return true;
 			}
 			return false;
+		}
+
+		private string showPathSelection(string path) {
+			if (path.Length == 0) {
+				path = Program.GamePath;
+			}
+			GamePathSelectForm gamePathSelectForm = new GamePathSelectForm();
+			gamePathSelectForm.Icon = Program.LoncherSettings.Icon;
+			gamePathSelectForm.ThePath = path;
+			if (gamePathSelectForm.ShowDialog(this) == DialogResult.Yes) {
+				path = gamePathSelectForm.ThePath;
+				gamePathSelectForm.Dispose();
+				try {
+					File.WriteAllLines(CFGFILE, new string[] {
+						"path = " + path
+					});
+				}
+				catch (Exception ex) {
+					YobaDialog.ShowDialog(Locale.Get("CannotWriteCfg") + ":\r\n" + ex.Message);
+				}
+				if (path.Length == 0) {
+					path = Program.GamePath;
+				}
+				else {
+					if (path[path.Length - 1] != '\\') {
+						path += "\\";
+					}
+					Program.GamePath = path;
+				}
+				return path;
+			}
+			else {
+				Application.Exit();
+				return null;
+			}
 		}
 
 		private void PreloaderForm_ShownAsync(object sender, EventArgs e) {
@@ -156,194 +157,169 @@ namespace YobaLoncher {
 		private async void Initialize() {
 			progressBar1.Value = 0;
 			try {
-				//throw new Exception("hui");
-				string settingsJson = (await wc_.DownloadStringTaskAsync("hui" + Program.SETTINGS_URL));
+				if (!Directory.Exists("loncherData")) {
+					Directory.CreateDirectory("loncherData");
+				}
+				if (!Directory.Exists(IMGPATH)) {
+					Directory.CreateDirectory(IMGPATH);
+				}
+				if (!Directory.Exists(UPDPATH)) {
+					Directory.CreateDirectory(UPDPATH);
+				}
+				//WebBrowserHelper.FixBrowserVersion();
+				//ErrorAndKill("Cannot get Images:\r\n");
+				string settingsJson = (await wc_.DownloadStringTaskAsync(Program.SETTINGS_URL));
 				incProgress(5);
-				Thread.Sleep(2);
 				try {
-					Program.launcherData = new LauncherData(settingsJson);
+					Program.LoncherSettings = new LauncherData(settingsJson);
 					try {
-						File.WriteAllText("settings", settingsJson);
+						File.WriteAllText("loncherData\\settings", settingsJson);
 					}
 					catch { }
 					incProgress(5);
-					Thread.Sleep(2);
+					try {
+						string locFile = "loncherData\\loc";
+						if (Program.LoncherSettings.RAW.Localization != null) {
+							FileInfo locInfo = Program.LoncherSettings.RAW.Localization;
+							if (YU.stringHasText(locInfo.Url)) {
+								locInfo.Path = locFile;
+								if (!FileChecker.CheckFileMD5("", locInfo)) {
+									string loc = await wc_.DownloadStringTaskAsync(locInfo.Url);
+									File.WriteAllText(locFile, loc, Encoding.UTF8);
+									Locale.LoadCustomLoc(loc.Replace("\r\n", "\n").Split('\n'));
+								}
+								Locale.LoadCustomLoc(File.ReadAllLines(locFile, Encoding.UTF8));
+							}
+							else if (File.Exists(locFile)) {
+								Locale.LoadCustomLoc(File.ReadAllLines(locFile, Encoding.UTF8));
+							}
+						}
+						else if (File.Exists(locFile)) {
+							Locale.LoadCustomLoc(File.ReadAllLines(locFile, Encoding.UTF8));
+						}
+						incProgress(5);
+					}
+					catch (Exception ex) {
+						YobaDialog.ShowDialog(Locale.Get("CannotGetLocaleFile") + ":\r\n" + ex.Message);
+					}
 					try {
 						downloadProgressTracker_ = new DownloadProgressTracker(50, TimeSpan.FromMilliseconds(500));
 						wc_.DownloadProgressChanged += new DownloadProgressChangedEventHandler(OnDownloadProgressChanged);
-
-						if (stringHasText(Program.launcherData.LoncherHash)) {
-							if (!checkFileMD5(Application.ExecutablePath, Program.launcherData.LoncherHash)) {
-								if (stringHasText(Program.launcherData.LoncherExe)) {
-									loadingLabel.Text = "Updating Yoba Löncher...";
-									string newLoncherPath = Application.ExecutablePath + ".new";
-									string appname = Application.ExecutablePath;
-									appname = appname.Substring(appname.LastIndexOf('\\') + 1);
-									progressBarLeft_ = progressBar1.Value;
-									await wc_.DownloadFileTaskAsync(Program.launcherData.LoncherExe, newLoncherPath);
-									downloadProgressTracker_.Reset();
-									if (checkFileMD5(newLoncherPath, Program.launcherData.LoncherHash)) {
-										Process.Start(new ProcessStartInfo {
-											Arguments = String.Format("/C choice /C Y /N /D Y /T 1 & Del \"{0}\" & Rename \"{1}\" \"{2}\" & \"{0}\""
-												, Application.ExecutablePath, newLoncherPath, appname)
-											,
-											FileName = "cmd"
-											,
-											WindowStyle = ProcessWindowStyle.Hidden
-										});
-										Application.Exit();
-										return;
-									}
-								}
-								else {
-									ErrorAndKill("Launcher is out of date.\r\n\r\nAdmin eblan ne polozhil the link for autoupdate,\r\npoetomu we will just ne dadim zapustit the Launcher.");
+						//
+						if (false && !FileChecker.CheckFileMD5(Application.ExecutablePath, Program.LoncherSettings.LoncherHash)) {
+							if (YU.stringHasText(Program.LoncherSettings.LoncherExe)) {
+								loadingLabel.Text = Locale.Get("UpdatingLoncher");
+								string newLoncherPath = Application.ExecutablePath + ".new";
+								string appname = Application.ExecutablePath;
+								appname = appname.Substring(appname.LastIndexOf('\\') + 1);
+								progressBarLeft_ = progressBar1.Value;
+								await wc_.DownloadFileTaskAsync(Program.LoncherSettings.LoncherExe, newLoncherPath);
+								downloadProgressTracker_.Reset();
+								if (FileChecker.CheckFileMD5(newLoncherPath, Program.LoncherSettings.LoncherHash)) {
+									Process.Start(new ProcessStartInfo {
+										Arguments = String.Format("/C choice /C Y /N /D Y /T 1 & Del \"{0}\" & Rename \"{1}\" \"{2}\" & \"{0}\""
+											, Application.ExecutablePath, newLoncherPath, appname)
+										, FileName = "cmd"
+										, WindowStyle = ProcessWindowStyle.Hidden
+									});
+									Application.Exit();
 									return;
 								}
-								progressBar1.Value = 50;
+								else {
+									YU.ErrorAndKill(Locale.Get("LoncherOutOfDate2"));
+									return;
+								}
+							}
+							else {
+								YU.ErrorAndKill(Locale.Get("LoncherOutOfDate1"));
+								return;
 							}
 						}
-						if (Program.launcherData.Dlls != null) {
-							if (!checkFileMD5("awesomium.dll", "1ACC23DE75A61143B76FAB2D437B144B")) {
-								if (Program.launcherData.Dlls.ContainsKey("awesomium")) {
-									await loadFile(Program.launcherData.Dlls["awesomium"], "awesomium.dll");
-								}
-								else {
-									ErrorAndKill("awesomium.dll is missing!");
-									return;
-								}
-							}
-							if (!checkFileMD5("icudt.dll", "AA30FF1C0C294BCFCED7E5CF8F4449F0")) {
-								if (Program.launcherData.Dlls.ContainsKey("icudt")) {
-									await loadFile(Program.launcherData.Dlls["icudt"], "icudt.dll");
-								}
-								else {
-									ErrorAndKill("icudt.dll is missing!");
-									return;
-								}
-							}
-							if (!checkFileMD5("Awesomium.Core.dll", "CB37BDA5C5BF2B428961C42AAE992EA8")) {
-								if (Program.launcherData.Dlls.ContainsKey("awecore")) {
-									await loadFile(Program.launcherData.Dlls["awecore"], "Awesomium.Core.dll");
-								}
-								else {
-									ErrorAndKill("Awesomium.Core.dll is missing!");
-									return;
-								}
-							}
-							if (Directory.Exists("awesomium_process")) {
-								Directory.Delete("awesomium_process");
-							}
-							if (!checkFileMD5("awesomium_process", "A30AF369EA985FF564F20E7C05C4456F")) {
-								if (Program.launcherData.Dlls.ContainsKey("aweproc")) {
-									await loadFile(Program.launcherData.Dlls["aweproc"], "awesomium_process");
-								}
-								else {
-									ErrorAndKill("awesomium_process is missing!");
-									return;
-								}
-							}
-						}
-						else if (!(checkFileMD5("awesomium.dll", "1ACC23DE75A61143B76FAB2D437B144B")
-							&& checkFileMD5("icudt.dll", "AA30FF1C0C294BCFCED7E5CF8F4449F0")
-							&& checkFileMD5("awesomium_process", "A30AF369EA985FF564F20E7C05C4456F")
-							&& checkFileMD5("Awesomium.Core.dll", "CB37BDA5C5BF2B428961C42AAE992EA8"))) {
-							ErrorAndKill("Important DLLs are missing!");
-							return;
-						}
-						Thread.Sleep(2);
 					}
 					catch (Exception ex) {
-						ErrorAndKill("Cannot update the Löncher:\r\n" + ex.Message + "\r\n" + ex.StackTrace);
+						YU.ErrorAndKill(Locale.Get("CannotUpdateLoncher") + ":\r\n" + ex.Message + "\r\n" + ex.StackTrace);
 						return;
 					}
 					try {
-						LauncherData.LauncherDataRaw raw = Program.launcherData.RAW;
-						if (!Directory.Exists("images")) {
-							Directory.CreateDirectory("images");
+						LauncherData.LauncherDataRaw raw = Program.LoncherSettings.RAW;
+						if (await assertFile(raw.Background, IMGPATH)) {
+							Program.LoncherSettings.Background = new Bitmap(IMGPATH + raw.Background.Path);
 						}
-						string imgName = "";
-						if (await assertFile(raw.Background, "images")) {
-							Program.launcherData.Background = new Bitmap("images\\" + raw.Background.Path);
-						}
-						if (await assertFile(raw.Icon, "images")) {
-							Bitmap bm = new Bitmap("images\\" + raw.Icon.Path);
+						if (await assertFile(raw.Icon, IMGPATH)) {
+							Bitmap bm = new Bitmap(IMGPATH + raw.Icon.Path);
 							if (bm != null) {
-								Program.launcherData.Icon = Icon.FromHandle(bm.GetHicon());
+								Program.LoncherSettings.Icon = Icon.FromHandle(bm.GetHicon());
 							}
 						}
-						if (await assertFile(raw.PreloaderBackground, "images")) {
-							this.BackgroundImage = new Bitmap("images\\" + raw.PreloaderBackground.Path);
+						if (await assertFile(raw.PreloaderBackground, IMGPATH)) {
+							this.BackgroundImage = new Bitmap(IMGPATH + raw.PreloaderBackground.Path);
 						}
-						if (Program.launcherData.Icon == null) {
-							Program.launcherData.Icon = this.Icon;
+						if (Program.LoncherSettings.Icon == null) {
+							Program.LoncherSettings.Icon = this.Icon;
 						}
-						if (Program.launcherData.UI.Count > 0) {
-							string[] keys = Program.launcherData.UI.Keys.ToArray();
+						if (Program.LoncherSettings.UI.Count > 0) {
+							string[] keys = Program.LoncherSettings.UI.Keys.ToArray();
 							foreach (string key in keys) {
-								if (!(await assertFile(Program.launcherData.UI[key].BgImage, "images"))) {
-									Program.launcherData.UI[key].BgImage = null;
+								if (!(await assertFile(Program.LoncherSettings.UI[key].BgImage, IMGPATH))) {
+									Program.LoncherSettings.UI[key].BgImage = null;
 								}
 							}
 						}
-						if (Program.launcherData.Buttons.Count > 0) {
-							foreach (LinkButton lbtn in Program.launcherData.Buttons) {
-								if (!(await assertFile(lbtn.BgImage, "images"))) {
+						if (Program.LoncherSettings.Buttons.Count > 0) {
+							foreach (LinkButton lbtn in Program.LoncherSettings.Buttons) {
+								if (!(await assertFile(lbtn.BgImage, IMGPATH))) {
 									lbtn.BgImage = null;
 								}
 							}
 						}
 					}
 					catch (Exception ex) {
-						ErrorAndKill("Cannot get Images:\r\n" + ex.Message);
+						YU.ErrorAndKill(Locale.Get("CannotGetImages") + ":\r\n" + ex.Message);
 						return;
 					}
-					if (Program.launcherData.Fonts != null) {
-						List<string> keys = Program.launcherData.Fonts.Keys.ToList();
+					if (Program.LoncherSettings.Fonts != null) {
+						List<string> keys = Program.LoncherSettings.Fonts.Keys.ToList();
 						if (keys.Count > 0) {
 							try {
-								if (!Directory.Exists("fonts")) {
-									Directory.CreateDirectory("fonts");
+								if (!Directory.Exists(FNTPATH)) {
+									Directory.CreateDirectory(FNTPATH);
 								}
 								foreach (string key in keys) {
 									using (Font fontTester = new Font(key, 12, FontStyle.Regular, GraphicsUnit.Pixel)) {
 										if (fontTester.Name == key) {
-											Program.launcherData.Fonts[key] = "win";
+											Program.LoncherSettings.Fonts[key] = "win";
 										}
-										else if (File.Exists("fonts\\" + key)) {
-											Program.launcherData.Fonts[key] = "local";
+										else if (File.Exists(FNTPATH + key)) {
+											Program.LoncherSettings.Fonts[key] = "local";
 										}
 										else {
 											string status = "none";
-											string src = Program.launcherData.Fonts[key];
-											string filename = "fonts\\" + key;
-											if (stringHasText(src)) {
+											string src = Program.LoncherSettings.Fonts[key];
+											string filename = FNTPATH + key;
+											if (YU.stringHasText(src)) {
 												await loadFile(src, filename);
 												if (File.Exists(filename)) {
 													status = "local";
 												}
 											}
-											Program.launcherData.Fonts[key] = status;
+											Program.LoncherSettings.Fonts[key] = status;
 										}
 									}
 								}
 							}
 							catch (Exception ex) {
-								ErrorAndKill("Cannot get Fonts:\r\n" + ex.Message);
+								YU.ErrorAndKill(Locale.Get("CannotGetFonts") + ":\r\n" + ex.Message);
 								return;
 							}
 						}
 					}
 					try {
-						await Program.launcherData.InitChangelog();
+						await Program.LoncherSettings.InitChangelog();
 						incProgress(5);
-						Thread.Sleep(2);
 						try {
-							if (!Directory.Exists("updates")) {
-								Directory.CreateDirectory("updates");
-							}
 							string path = "";
-							if (File.Exists("loncher.cfg")) {
-								string[] lines = File.ReadAllLines("loncher.cfg");
+							if (File.Exists(CFGFILE)) {
+								string[] lines = File.ReadAllLines(CFGFILE);
 								foreach (string line in lines) {
 									if (line.Length > 0 && line.StartsWith("path")) {
 										string[] vals = line.Split('=');
@@ -354,10 +330,10 @@ namespace YobaLoncher {
 								}
 							}
 							else {
-								if (stringHasText(Program.launcherData.SteamGameFolder)) {
+								if (YU.stringHasText(Program.LoncherSettings.SteamGameFolder)) {
 									List<string> steampaths = getSteamLibraryPaths();
 									for (int i = 0; i < steampaths.Count; i++) {
-										string spath = steampaths[i] + Program.launcherData.SteamGameFolder;
+										string spath = steampaths[i] + Program.LoncherSettings.SteamGameFolder;
 										if (Directory.Exists(spath)) {
 											path = spath + "\\";
 											break;
@@ -365,97 +341,92 @@ namespace YobaLoncher {
 									}
 								}
 								incProgress(5);
-								Thread.Sleep(2);
-								GamePathSelectForm gamePathSelectForm = new GamePathSelectForm();
-								gamePathSelectForm.Icon = Program.launcherData.Icon;
-								gamePathSelectForm.ThePath = path;
-								if (gamePathSelectForm.ShowDialog(this) == DialogResult.Yes) {
-									path = gamePathSelectForm.ThePath;
-									gamePathSelectForm.Dispose();
-									try {
-										File.WriteAllLines("loncher.cfg", new string[]{
-											"path = " + path
-										});
-									}
-									catch (Exception ex) {
-										MessageBox.Show("Cannot write the configuration file:\r\n" + ex.Message);
-									}
-								}
-								else {
-									Application.Exit();
-									return;
-								}
+								path = showPathSelection(path);
 							}
-							try {
-								if (path.Length == 0) {
-									path = Application.ExecutablePath;
-									path = path.Substring(path.LastIndexOf('\\') + 1);
-								}
-								else if (path[path.Length - 1] != '\\') {
+							if (path is null || path.Length == 0) {
+								path = Program.GamePath;
+							}
+							else {
+								if (path[path.Length - 1] != '\\') {
 									path += "\\";
 								}
-								if (!File.Exists(path + Program.launcherData.ExeName)) {
-									ErrorAndKill("No executable found in the specified folder!");
-									return;
-								}
-								string ver = Program.launcherData.ExeVersion;
-								if (ver != null) {
-									string curVer = FileVersionInfo.GetVersionInfo(path + Program.launcherData.ExeName).FileVersion.Replace(',', '.');
-									if (curVer != ver) {
-										ErrorAndKill("Exe file version doesn't match the prerequisites!\r\nWe need version " + ver + " to operate.\r\nAnd yours is " + curVer);
+								Program.GamePath = path;
+							}
+							try {
+								while (!File.Exists(path + Program.LoncherSettings.ExeName)) {
+									YobaDialog.ShowDialog(Locale.Get("NoExeInPath"));
+									path = showPathSelection(path);
+									if (path is null) {
 										return;
 									}
 								}
-								foreach (FileInfo fi in Program.launcherData.Files) {
-									fi.IsOK = checkFileMD5(path + fi.Path, fi.Hash);
+								if (Program.LoncherSettings.GameVersions != null && Program.LoncherSettings.GameVersions.Count > 0) {
+									string curVer = FileVersionInfo.GetVersionInfo(path + Program.LoncherSettings.ExeName).FileVersion.Replace(',', '.');
+									bool gotVer = false;
+									foreach (GameVersion gv in Program.LoncherSettings.GameVersions) {
+										if (!YU.stringHasText(gv.ExeVersion) || gv.ExeVersion.Equals(curVer)) {
+											gotVer = true;
+											if (gv.Files != null && gv.Files.Count > 0) {
+												Program.LoncherSettings.Files.AddRange(gv.Files);
+											}
+											break;
+										}
+									}
+									if (!gotVer) {
+										YU.ErrorAndKill(string.Format(Locale.Get("AllFilesIntact"), curVer));
+										return;
+									}
 								}
 								incProgress(10);
-								progressBar1.Value = 100;
-								Thread.Sleep(2);
+								if (oldMainForm_ != null) {
+									oldMainForm_.Dispose();
+								}
+								Program.GameFileCheckResult = FileChecker.CheckFiles(Program.LoncherSettings.Files);
+								progressBar1.Value = 90;
 								MainForm mainForm = new MainForm();
-								mainForm.Icon = Program.launcherData.Icon;
-								mainForm.ThePath = path;
+								mainForm.Icon = Program.LoncherSettings.Icon;
+								progressBar1.Value = 99;
 								mainForm.Show(this);
 								Hide();
 							}
 							catch (Exception ex) {
-								ErrorAndKill("Cannot check files:\r\n" + ex.Message);
+								YU.ErrorAndKill(Locale.Get("CannotCheckFiles") + ":\r\n" + ex.Message);
 							}
 						}
 						catch (Exception ex) {
-							ErrorAndKill("Cannot access or parse config:\r\n" + ex.Message);
+							YU.ErrorAndKill(Locale.Get("CannotParseConfig") + ":\r\n" + ex.Message);
 						}
 					}
 					catch (Exception ex) {
-						ErrorAndKill("Cannot load the icon:\r\n" + ex.Message);
+						YU.ErrorAndKill(Locale.Get("CannotLoadIcon") + ":\r\n" + ex.Message);
 					}
 				}
 				catch (Exception ex) {
-					ErrorAndKill("Cannot parse the Settings file:\r\n" + ex.Message);
+					YU.ErrorAndKill(Locale.Get("CannotParseSettings") + ":\r\n" + ex.Message);
 				}
 			}
 			catch (Exception ex) {
 				UIElement[] btns;
 				UIElement btnQuit = new UIElement();
-				btnQuit.Caption = "Quit";
+				btnQuit.Caption = Locale.Get("Quit");
 				btnQuit.Result = DialogResult.Abort;
 				UIElement btnRetry = new UIElement();
-				btnRetry.Caption = "Retry";
+				btnRetry.Caption = Locale.Get("Retry");
 				btnRetry.Result = DialogResult.Retry;
 				string msg;
 				if (File.Exists("settings")) {
-					msg = "Couldn't get settings for the Löncher.\r\nProbably, you're out of Ethernet.\r\n\r\nShall we try to connect again, or make an attempt to start the louncher in offline mode?";
+					msg = Locale.Get("WebClientErrorOffline");
 					UIElement btnOffline = new UIElement();
-					btnOffline.Caption = "Run offline";
+					btnOffline.Caption = Locale.Get("RunOffline");
 					btnOffline.Result = DialogResult.Ignore;
 					btns = new UIElement[] { btnQuit, btnRetry, btnOffline };
 				}
 				else {
-					msg = "Couldn't get settings for the Löncher.\r\nProbably, you're out of Ethernet.";
+					msg = Locale.Get("WebClientError");
 					btns = new UIElement[] { btnQuit, btnRetry };
 				}
 				YobaDialog yobaDialog = new YobaDialog(msg, btns);
-				yobaDialog.Icon = Program.launcherData != null ? (Program.launcherData.Icon ?? this.Icon) : this.Icon;
+				yobaDialog.Icon = Program.LoncherSettings != null ? (Program.LoncherSettings.Icon ?? this.Icon) : this.Icon;
 				DialogResult result = yobaDialog.ShowDialog(this);
 				switch (result) {
 					case DialogResult.Retry:
@@ -465,9 +436,9 @@ namespace YobaLoncher {
 						InitializeOffline();
 						break;
 					case DialogResult.Abort: {
-						Application.Exit();
-						return;
-					}
+							Application.Exit();
+							return;
+						}
 				}
 			}
 		}
@@ -476,72 +447,77 @@ namespace YobaLoncher {
 			try {
 				Program.OfflineMode = true;
 				string settingsJson = File.ReadAllText("settings");
-				Program.launcherData = new LauncherData(settingsJson);
+				Program.LoncherSettings = new LauncherData(settingsJson);
 				incProgress(10);
 				try {
-					LauncherData.LauncherDataRaw raw = Program.launcherData.RAW;
-					if (!Directory.Exists("images")) {
-						Directory.CreateDirectory("images");
-					}
-					string imgName = "";
-					if (assertOfflineFile(raw.Background, "images")) {
-						Program.launcherData.Background = new Bitmap("images\\" + raw.Background.Path);
-					}
-					if (assertOfflineFile(raw.Icon, "images")) {
-						Bitmap bm = new Bitmap("images\\" + raw.Icon.Path);
-						if (bm != null) {
-							Program.launcherData.Icon = Icon.FromHandle(bm.GetHicon());
+					LauncherData.LauncherDataRaw raw = Program.LoncherSettings.RAW;
+					try {
+						string locFile = "loncherData\\loc";
+						if (File.Exists(locFile)) {
+							Locale.LoadCustomLoc(File.ReadAllLines(locFile, Encoding.UTF8));
 						}
 					}
-					if (assertOfflineFile(raw.PreloaderBackground, "images")) {
-						this.BackgroundImage = new Bitmap("images\\" + raw.PreloaderBackground.Path);
+					catch (Exception ex) {
+						YobaDialog.ShowDialog(Locale.Get("CannotGetLocaleFile") + ":\r\n" + ex.Message);
 					}
-					if (Program.launcherData.Icon == null) {
-						Program.launcherData.Icon = this.Icon;
+					if (assertOfflineFile(raw.Background, IMGPATH)) {
+						Program.LoncherSettings.Background = new Bitmap(IMGPATH + raw.Background.Path);
 					}
-					if (Program.launcherData.UI.Count > 0) {
-						string[] keys = Program.launcherData.UI.Keys.ToArray();
+					if (assertOfflineFile(raw.Icon, IMGPATH)) {
+						Bitmap bm = new Bitmap(IMGPATH + raw.Icon.Path);
+						if (bm != null) {
+							Program.LoncherSettings.Icon = Icon.FromHandle(bm.GetHicon());
+						}
+					}
+					if (assertOfflineFile(raw.PreloaderBackground, IMGPATH)) {
+						this.BackgroundImage = new Bitmap(IMGPATH + raw.PreloaderBackground.Path);
+					}
+					if (Program.LoncherSettings.Icon == null) {
+						Program.LoncherSettings.Icon = this.Icon;
+					}
+					if (Program.LoncherSettings.UI.Count > 0) {
+						string[] keys = Program.LoncherSettings.UI.Keys.ToArray();
 						foreach (string key in keys) {
-							if (!(assertOfflineFile(Program.launcherData.UI[key].BgImage, "images"))) {
-								Program.launcherData.UI[key].BgImage = null;
+							if (!(assertOfflineFile(Program.LoncherSettings.UI[key].BgImage, IMGPATH))) {
+								Program.LoncherSettings.UI[key].BgImage = null;
 							}
 						}
 					}
-					if (Program.launcherData.Buttons.Count > 0) {
-						foreach (LinkButton lbtn in Program.launcherData.Buttons) {
-							if (!(assertOfflineFile(lbtn.BgImage, "images"))) {
+					if (Program.LoncherSettings.Buttons.Count > 0) {
+						foreach (LinkButton lbtn in Program.LoncherSettings.Buttons) {
+							if (!(assertOfflineFile(lbtn.BgImage, IMGPATH))) {
 								lbtn.BgImage = null;
 							}
 						}
 					}
 				}
 				catch (Exception ex) {
-					ErrorAndKill("Cannot get Images:\r\n" + ex.Message);
+					YU.ErrorAndKill(Locale.Get("CannotGetImages") + ":\r\n" + ex.Message);
 					return;
 				}
-				if (Program.launcherData.Fonts != null) {
-					List<string> keys = Program.launcherData.Fonts.Keys.ToList();
+				if (Program.LoncherSettings.Fonts != null) {
+					List<string> keys = Program.LoncherSettings.Fonts.Keys.ToList();
 					if (keys.Count > 0) {
 						try {
-							if (!Directory.Exists("fonts")) {
-								Directory.CreateDirectory("fonts");
+							if (!Directory.Exists(FNTPATH)) {
+								Directory.CreateDirectory(FNTPATH);
 							}
 							foreach (string key in keys) {
 								using (Font fontTester = new Font(key, 12, FontStyle.Regular, GraphicsUnit.Pixel)) {
 									if (fontTester.Name == key) {
-										Program.launcherData.Fonts[key] = "win";
+										Program.LoncherSettings.Fonts[key] = "win";
 									}
-									else if (File.Exists("fonts\\" + key)) {
-										Program.launcherData.Fonts[key] = "local";
+									else if (File.Exists(FNTPATH + key)) {
+										Program.LoncherSettings.Fonts[key] = "local";
 									}
 									else {
-										Program.launcherData.Fonts[key] = "none";
+										Program.LoncherSettings.Fonts[key] = "none";
 									}
 								}
 							}
 						}
 						catch (Exception ex) {
-							ErrorAndKill("Cannot get Fonts:\r\n" + ex.Message);
+							YU.ErrorAndKill(Locale.Get("CannotGetFonts") + ":\r\n" + ex.Message);
 							return;
 						}
 					}
@@ -549,8 +525,8 @@ namespace YobaLoncher {
 				try {
 					try {
 						string path = "";
-						if (File.Exists("loncher.cfg")) {
-							string[] lines = File.ReadAllLines("loncher.cfg");
+						if (File.Exists(CFGFILE)) {
+							string[] lines = File.ReadAllLines(CFGFILE);
 							foreach (string line in lines) {
 								if (line.Length > 0 && line.StartsWith("path")) {
 									string[] vals = line.Split('=');
@@ -561,10 +537,10 @@ namespace YobaLoncher {
 							}
 						}
 						else {
-							if (stringHasText(Program.launcherData.SteamGameFolder)) {
+							if (YU.stringHasText(Program.LoncherSettings.SteamGameFolder)) {
 								List<string> steampaths = getSteamLibraryPaths();
 								for (int i = 0; i < steampaths.Count; i++) {
-									string spath = steampaths[i] + Program.launcherData.SteamGameFolder;
+									string spath = steampaths[i] + Program.LoncherSettings.SteamGameFolder;
 									if (Directory.Exists(spath)) {
 										path = spath + "\\";
 										break;
@@ -572,74 +548,66 @@ namespace YobaLoncher {
 								}
 							}
 							incProgress(5);
-							Thread.Sleep(2);
-							GamePathSelectForm gamePathSelectForm = new GamePathSelectForm();
-							gamePathSelectForm.Icon = Program.launcherData.Icon;
-							gamePathSelectForm.ThePath = path;
-							if (gamePathSelectForm.ShowDialog(this) == DialogResult.Yes) {
-								path = gamePathSelectForm.ThePath;
-								gamePathSelectForm.Dispose();
-								try {
-									File.WriteAllLines("loncher.cfg", new string[]{
-											"path = " + path
-										});
-								}
-								catch (Exception ex) {
-									MessageBox.Show("Cannot write the configuration file:\r\n" + ex.Message);
-								}
-							}
-							else {
-								Application.Exit();
-								return;
-							}
+							path = showPathSelection(path);
 						}
 						try {
-							if (path.Length == 0) {
-								path = Application.ExecutablePath;
-								path = path.Substring(path.LastIndexOf('\\') + 1);
+							if (path is null || path.Length == 0) {
+								path = Program.GamePath;
 							}
-							else if (path[path.Length - 1] != '\\') {
-								path += "\\";
+							else {
+								if (path[path.Length - 1] != '\\') {
+									path += "\\";
+								}
+								Program.GamePath = path;
 							}
-							if (!File.Exists(path + Program.launcherData.ExeName)) {
-								ErrorAndKill("No executable found in the specified folder!");
-								return;
-							}
-							string ver = Program.launcherData.ExeVersion;
-							if (ver != null) {
-								string curVer = FileVersionInfo.GetVersionInfo(path + Program.launcherData.ExeName).FileVersion.Replace(',', '.');
-								if (curVer != ver) {
-									ErrorAndKill("Exe file version doesn't match the prerequisites!\r\nWe need version " + ver + " to operate.\r\nAnd yours is " + curVer);
+							if (!File.Exists(path + Program.LoncherSettings.ExeName)) {
+								YobaDialog.ShowDialog(Locale.Get("NoExeInPath"));
+								path = showPathSelection(path);
+								if (path is null) {
 									return;
 								}
 							}
-							foreach (FileInfo fi in Program.launcherData.Files) {
-								fi.IsOK = checkFileMD5(path + fi.Path, fi.Hash);
+							if (Program.LoncherSettings.GameVersions != null && Program.LoncherSettings.GameVersions.Count > 0) {
+								string curVer = FileVersionInfo.GetVersionInfo(path + Program.LoncherSettings.ExeName).FileVersion.Replace(',', '.');
+								bool gotVer = false;
+								foreach (GameVersion gv in Program.LoncherSettings.GameVersions) {
+									if (!YU.stringHasText(gv.ExeVersion) || gv.ExeVersion.Equals(curVer)) {
+										gotVer = true;
+										if (gv.Files != null && gv.Files.Count > 0) {
+											Program.LoncherSettings.Files.AddRange(gv.Files);
+										}
+										break;
+									}
+								}
+								if (!gotVer) {
+									YU.ErrorAndKill(string.Format(Locale.Get("OldGameVersion"), curVer));
+									return;
+								}
 							}
 							incProgress(10);
+							Program.GameFileCheckResult = FileChecker.CheckFiles(Program.LoncherSettings.Files);
 							progressBar1.Value = 90;
-							Thread.Sleep(2);
 							MainForm mainForm = new MainForm();
-							mainForm.Icon = Program.launcherData.Icon;
+							mainForm.Icon = Program.LoncherSettings.Icon;
 							mainForm.ThePath = path;
-							mainForm.Show(this);
 							progressBar1.Value = 99;
+							mainForm.Show(this);
 							Hide();
 						}
 						catch (Exception ex) {
-							ErrorAndKill("Cannot check files:\r\n" + ex.Message);
+							YU.ErrorAndKill(Locale.Get("CannotCheckFiles") + ":\r\n" + ex.Message);
 						}
 					}
 					catch (Exception ex) {
-						ErrorAndKill("Cannot access or parse config:\r\n" + ex.Message);
+						YU.ErrorAndKill(Locale.Get("CannotParseConfig") + ":\r\n" + ex.Message);
 					}
 				}
 				catch (Exception ex) {
-					ErrorAndKill("Cannot load the icon:\r\n" + ex.Message);
+					YU.ErrorAndKill(Locale.Get("CannotLoadIcon") + ":\r\n" + ex.Message);
 				}
 			}
 			catch (Exception ex) {
-				ErrorAndKill("Couldn't get settings for the Löncher:\r\n" + ex.Message);
+				YU.ErrorAndKill(Locale.Get("CannotParseSettings") + ":\r\n" + ex.Message);
 			}
 		}
 	}

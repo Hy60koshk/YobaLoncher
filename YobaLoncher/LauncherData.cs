@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace YobaLoncher {
 	class LauncherData {
-		public string ExeVersion;
+		#pragma warning disable 649
+
+		public List<GameVersion> GameVersions;
 		public List<FileInfo> Files;
 		public List<LinkButton> Buttons;
 		public Dictionary<string, UIElement> UI;
@@ -32,10 +35,11 @@ namespace YobaLoncher {
 		public class LauncherDataRaw {
 			public string GameName;
 			public string SteamGameFolder;
-			public string ExeVersion = null;
+			public List<GameVersion> GameVersions;
 			public List<FileInfo> Files;
 			public FileInfo Background;
 			public FileInfo PreloaderBackground;
+			public FileInfo Localization;
 			public FileInfo Icon;
 			public string ExeName;
 			public string SteamID;
@@ -65,7 +69,7 @@ namespace YobaLoncher {
 				if (btn.Size == null)
 					btn.Size = new Vector();
 			}
-			ExeVersion = raw.ExeVersion;
+			GameVersions = raw.GameVersions;
 
 			UI = raw.UI ?? new Dictionary<string, UIElement>();
 
@@ -104,16 +108,22 @@ namespace YobaLoncher {
 				}
 			}
 			catch (Exception ex) {
-				PreloaderForm.ErrorAndKill("Cannot get ChangeLog files:\r\n" + ex.Message);
+				YU.ErrorAndKill("Cannot get ChangeLog files:\r\n" + ex.Message);
 			}
 		}
+	}
+	class GameVersion {
+		public string ExeVersion = null;
+		public List<FileInfo> Files;
 	}
 	class UIElement {
 		public string Color;
 		public string BgColor;
 		public string BgColorDown;
 		public string BgColorHover;
-		public FileInfo BgImage;
+		public string BorderColor = "gray";
+		public int BorderSize = -1;
+		public BgImageInfo BgImage;
 		public string Caption;
 		public string Font;
 		public string FontSize;
@@ -124,20 +134,25 @@ namespace YobaLoncher {
 	}
 	class LinkButton : UIElement {
 		public string Url;
-		public string Caption;
 	}
 	class FileInfo {
 		public string Url;
 		public string Path;
 		public string Description;
-		public string Hash;
+		public List<string> Hashes;
 		public bool IsOK = false;
+		public string UploadAlias;
+		public uint Size;
 
 		public bool IsComplete {
 			get {
-				return Url != null && Path != null && Hash != null && Url.Length > 0 && Path.Length > 0 && Hash.Length > 0;
+				return Url != null && Path != null && Hashes != null
+					&& Url.Length > 0 && Path.Length > 0 && Hashes.Count > 0;
 			}
 		}
+	}
+	class BgImageInfo : FileInfo {
+		public string Layout;
 	}
 	class Vector {
 		public int X = 0;

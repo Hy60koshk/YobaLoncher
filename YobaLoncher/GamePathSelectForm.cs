@@ -10,10 +10,22 @@ using System.Windows.Forms;
 
 namespace YobaLoncher {
 	public partial class GamePathSelectForm : Form {
+		public const int WM_NCLBUTTONDOWN = 0xA1;
+		public const int HT_CAPTION = 0x2;
+		[System.Runtime.InteropServices.DllImport("user32.dll")]
+		public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
+		[System.Runtime.InteropServices.DllImport("user32.dll")]
+		public static extern bool ReleaseCapture();
+
 		public string ThePath = "";
 
 		public GamePathSelectForm() {
 			InitializeComponent();
+			button1.Text = Locale.Get("Browse");
+			button2.Text = Locale.Get("Proceed");
+			label1.Text = Locale.Get("EnterThePath");
+			Text = Locale.Get("GamePathSelectionTitle");
+			closeButton.UpdateLocation();
 		}
 
 		private void button1_Click(object sender, EventArgs e) {
@@ -32,8 +44,11 @@ namespace YobaLoncher {
 			DialogResult = DialogResult.Yes;
 		}
 
-		/*private void closeButton_Click(object sender, EventArgs e) {
-			DialogResult = DialogResult.Abort;
-		}*/
+		private void draggingPanel_MouseDown(object sender, MouseEventArgs e) {
+			if (e.Button == MouseButtons.Left) {
+				ReleaseCapture();
+				SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
+			}
+		}
 	}
 }
