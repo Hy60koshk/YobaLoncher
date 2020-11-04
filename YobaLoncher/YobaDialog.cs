@@ -27,7 +27,7 @@ namespace YobaLoncher {
 		internal static UIElement[] YesNoBtns = new UIElement[] {
 			new UIElement() {
 				Caption = Locale.Get("No"), Result = DialogResult.No
-			},new UIElement() {
+			}, new UIElement() {
 				Caption = Locale.Get("Yes"), Result = DialogResult.Yes
 			}
 		};

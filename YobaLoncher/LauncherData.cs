@@ -7,8 +7,15 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace YobaLoncher {
+	public enum StartPageEnum {
+		Changelog
+			, Status
+			, Links
+			, Mods
+	}
+
 	class LauncherData {
-		#pragma warning disable 649
+#pragma warning disable 649
 
 		public List<GameVersion> GameVersions;
 		public List<FileInfo> Files;
@@ -18,10 +25,12 @@ namespace YobaLoncher {
 		public string SteamGameFolder;
 		public string ExeName;
 		public string SteamID;
+		public string GogID;
 		public string ChangelogHtml = "";
 		public string ChangelogSite = "";
 		public string LoncherHash;
 		public string LoncherExe;
+		public StartPageEnum StartPage;
 		public Dictionary<string, string> Dlls;
 		public Dictionary<string, string> Fonts;
 		public string AwesomiumDll;
@@ -42,7 +51,9 @@ namespace YobaLoncher {
 			public FileInfo Localization;
 			public FileInfo Icon;
 			public string ExeName;
+			public StartPageEnum StartPage = StartPageEnum.Status;
 			public string SteamID;
+			public string GogID;
 			public string Changelog;
 			public string ChangelogEscape;
 			public string ChangelogTemplate;
@@ -71,10 +82,12 @@ namespace YobaLoncher {
 			}
 			GameVersions = raw.GameVersions;
 
+			StartPage = raw.StartPage;
 			UI = raw.UI ?? new Dictionary<string, UIElement>();
 
 			ExeName = raw.ExeName;
 			SteamID = raw.SteamID;
+			GogID = raw.GogID;
 			LoncherHash = raw.LoncherHash;
 			LoncherExe = raw.LoncherExe;
 			Dlls = raw.Dlls;

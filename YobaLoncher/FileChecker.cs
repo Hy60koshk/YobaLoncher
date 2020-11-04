@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,6 +13,14 @@ namespace YobaLoncher {
 		public bool IsAllOk = true;
 		public LinkedList<FileInfo> InvalidFiles = new LinkedList<FileInfo>();
 	}
+	class FileCheckedEventArgs : EventArgs {
+		public FileInfo File {
+			get; 
+		}
+		public FileCheckedEventArgs(FileInfo file) {
+			File = file;
+		}
+	}
 	class FileChecker {
 		private static MD5 md5_;
 
@@ -19,10 +28,16 @@ namespace YobaLoncher {
 			get => md5_ == null ? (md5_ = MD5.Create()) : md5_;
 		}
 
-		public static CheckResult CheckFiles(List<FileInfo> files) {
-			return CheckFiles(Program.GamePath, files);
+		public static async Task<CheckResult> CheckFiles(List<FileInfo> files) {
+			return await CheckFiles(Program.GamePath, files, null);
 		}
-		public static CheckResult CheckFiles(string root, List<FileInfo> files) {
+		public static async Task<CheckResult> CheckFiles(string root, List<FileInfo> files) {
+			return await CheckFiles(root, files, null);
+		}
+		public static async Task<CheckResult> CheckFiles(List<FileInfo> files, EventHandler<FileCheckedEventArgs> checkEventHandler) {
+			return await CheckFiles(Program.GamePath, files, checkEventHandler);
+		}
+		public static async Task<CheckResult> CheckFiles(string root, List<FileInfo> files, EventHandler<FileCheckedEventArgs> checkEventHandler) {
 			CheckResult result = new CheckResult();
 			foreach (FileInfo file in files) {
 				if (!(file.IsOK = CheckFileMD5(root, file))) {
@@ -31,10 +46,23 @@ namespace YobaLoncher {
 					WebRequest webRequest = WebRequest.Create(file.Url);
 					webRequest.Method = "HEAD";
 
-					using (WebResponse webResponse = webRequest.GetResponse()) {
+					using (WebResponse webResponse = await webRequest.GetResponseAsync()) {
 						string fileSize = webResponse.Headers.Get("Content-Length");
 						file.Size = Convert.ToUInt32(fileSize);
 					}
+					checkEventHandler?.Invoke(null, new FileCheckedEventArgs(file));
+				}
+			}
+			return result;
+		}
+		public static CheckResult CheckFilesOffline(List<FileInfo> files) {
+			CheckResult result = new CheckResult();
+			foreach (FileInfo file in files) {
+				if (!(file.IsOK = CheckFileMD5(Program.GamePath, file))) {
+					result.InvalidFiles.AddLast(file);
+					result.IsAllOk = false;
+					WebRequest webRequest = WebRequest.Create(file.Url);
+					webRequest.Method = "HEAD";
 				}
 			}
 			return result;

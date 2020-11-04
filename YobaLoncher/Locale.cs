@@ -64,13 +64,18 @@ namespace YobaLoncher {
 			, { "DLRate", "Downloading: {3} - {0} of {1} @ {2}" }
 			, { "AllFilesIntact", "All files intact, we're ready to go." }
 			, { "FilesMissing", "{0} files are missing or out of date." }
+			, { "StatusCopyingFiles", "Updating files in the game directory..." }
+			, { "StatusUpdatingDone", "Done!" }
+			, { "StatusDownloadError", "Download failed" }
 			, { "CannotDownloadFile", "Cannot download file \"{0}\"" }
 			, { "CannotMoveFile", "Cannot move file \"{0}\"" }
+			, { "DirectoryAccessDenied", "Cannot move file \"{0}\": Access denied. Restart the Launcher as Administrator." }
 			, { "UpdateSuccessful", "All files are up to date!\r\nShall we start the game now?" }
 			, { "CannotWriteCfg", "Cannot write the configuration file" }
 			, { "PreloaderTitle", "YobaLöncher — Loading..." }
 			, { "MainFormTitle", "YobaLöncher" }
 			, { "SettingsTitle", "Settings" }
+			, { "SettingsGamePath", "The game installation folder" }
 			, { "GamePathSelectionTitle", "Select the game folder" }
 			, { "EnterThePath", "Enter the path to the game installation folder" }
 			, { "NoExeInPath", "No game executable found in the specified folder!" }

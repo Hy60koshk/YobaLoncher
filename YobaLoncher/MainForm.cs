@@ -24,14 +24,21 @@ namespace YobaLoncher {
 		private DownloadProgressTracker downloadProgressTracker_;
 		public string ThePath = "";
 		private LinkedList<FileInfo> filesToUpload_;
+		private Dictionary<FileInfo, Label> fileIndicators_ = new Dictionary<FileInfo, Label>();
 		private LinkedListNode<FileInfo> currentFile_ = null;
 		private bool ReadyToGo_ = false;
 		private System.Security.Cryptography.MD5 md5_;
+
+		private long lastDlstringUpdate_ = -1;
 
 		public MainForm() {
 			ThePath = Program.GamePath;
 
 			InitializeComponent();
+
+			int style = NativeWinAPI.GetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE);
+			style |= NativeWinAPI.WS_EX_COMPOSITED;
+			NativeWinAPI.SetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE, style);
 
 			SuspendLayout();
 
@@ -60,20 +67,26 @@ namespace YobaLoncher {
 			theToolTip.SetToolTip(linksMenuBtn, Locale.Get("LinksTooltip"));
 			theToolTip.SetToolTip(settingsButton, Locale.Get("SettingsTooltip"));
 
-			linksPanel.Location = new Point(153, 25);
+			changelogPanel.Location = new Point(0, 0);
+			changelogPanel.Size = new Size(610, 330);
+			modsPanel.Location = new Point(0, 0);
+			modsPanel.Size = new Size(610, 330);
+			linksPanel.Location = new Point(0, 0);
 			linksPanel.Size = new Size(610, 330);
-			statusPanel.Location = new Point(153, 25);
+			statusPanel.Location = new Point(0, 0);
 			statusPanel.Size = new Size(610, 330);
 
 			if (Program.OfflineMode) {
-				Controls.Remove(webBrowser1);
+				Controls.Remove(changelogBrowser);
 			} 
 			else {
+				changelogBrowser.Location = new Point(0, 0);
+				changelogBrowser.Size = new Size(610, 330);
 				if (Program.LoncherSettings.ChangelogSite.Length > 0) {
-					webBrowser1.Url = new Uri(Program.LoncherSettings.ChangelogSite);
+					changelogBrowser.Url = new Uri(Program.LoncherSettings.ChangelogSite);
 				}
 				else {
-					webBrowser1.DocumentText = Program.LoncherSettings.ChangelogHtml;//"data:text/html;charset=UTF-8," + 
+					changelogBrowser.DocumentText = Program.LoncherSettings.ChangelogHtml;//"data:text/html;charset=UTF-8," + 
 				}
 			}
 
@@ -85,6 +98,9 @@ namespace YobaLoncher {
 					YU.setFont(updateLabelText, updateLabelInfo.Font, updateLabelInfo.FontSize);
 				}
 			}
+			string[] menuScreenKeys = new string[] {
+				"BasePanel", "StatusPanel", "LinksPanel", "ModsPanel", "ChangelogPanel"
+			};
 			string[] menuBtnKeys = new string[] {
 				"LaunchButton", "SettingsButton", "StatusButton", "LinksButton", "ChangelogButton", "ModsButton", "CloseButton", "MinimizeButton"
 			};
@@ -99,7 +115,44 @@ namespace YobaLoncher {
 					}
 				}
 			}
-			
+			foreach (string menuScreenKey in menuScreenKeys) {
+				if (Program.LoncherSettings.UI.ContainsKey(menuScreenKey)) {
+					UIElement uiInfo = Program.LoncherSettings.UI[menuScreenKey];
+					if (uiInfo != null) {
+						Control[] ctrls = Controls.Find(menuScreenKey, true);
+						if (ctrls.Length > 0) {
+							Panel panel = (Panel)ctrls[0];
+							if (uiInfo.Position != null) {
+								panel.Location = new Point(uiInfo.Position.X, uiInfo.Position.Y);
+							}
+							if (uiInfo.Size != null) {
+								panel.Size = new Size(uiInfo.Size.X, uiInfo.Size.Y);
+							}
+							if (YU.stringHasText(uiInfo.Color)) {
+								panel.ForeColor = YU.colorFromString(uiInfo.Color, Color.White);
+							}
+							if (YU.stringHasText(uiInfo.BgColor)) {
+								panel.BackColor = YU.colorFromString(uiInfo.BgColor, Color.DimGray);
+							}
+							if (uiInfo.BgImage != null && YU.stringHasText(uiInfo.BgImage.Path)) {
+								if (YU.stringHasText(uiInfo.BgImage.Layout)) {
+									try {
+										Enum.Parse(typeof(ImageLayout), uiInfo.BgImage.Layout);
+									}
+									catch {
+										panel.BackgroundImageLayout = ImageLayout.Stretch;
+									}
+								}
+								else {
+									panel.BackgroundImageLayout = ImageLayout.Stretch;
+								}
+								panel.BackgroundImage = new Bitmap(PreloaderForm.IMGPATH + uiInfo.BgImage.Path);
+							}
+						}
+					}
+				}
+			}
+
 			for (int i = 0; i < Program.LoncherSettings.Buttons.Count; i++) {
 				LinkButton lbtn = Program.LoncherSettings.Buttons[i];
 				if (lbtn != null) {
@@ -108,19 +161,65 @@ namespace YobaLoncher {
 					linkButton.TabIndex = 10 + i;
 					linkButton.UseVisualStyleBackColor = true;
 					linkButton.ApplyUIStyles(lbtn);
-
+					if (YU.stringHasText(lbtn.Caption)) {
+						linkButton.Text = "";
+						theToolTip.SetToolTip(linkButton, lbtn.Caption);
+					}
 					linkButton.Click += new EventHandler((object o, EventArgs a) => {
 						string url = ((YobaButton)o).Url;
 						if (YU.stringHasText(url)) {
 							Process.Start(url);
 						}
 					});
-					this.Controls.Add(linkButton);
+					linksPanel.Controls.Add(linkButton);
 				}
 			}
 
 			BackgroundImageLayout = ImageLayout.Stretch;
 			BackgroundImage = Program.LoncherSettings.Background;
+
+			switch (Program.LoncherSettings.StartPage) {
+				case StartPageEnum.Changelog:
+					changelogPanel.Visible = true;
+					break;
+				case StartPageEnum.Mods:
+					modsPanel.Visible = true;
+					break;
+				case StartPageEnum.Status:
+					statusPanel.Visible = true;
+					break;
+				case StartPageEnum.Links:
+					linksPanel.Visible = true;
+					break;
+			}
+
+			for (int i = 0; i < Program.LoncherSettings.Files.Count; i++) {
+				FileInfo fileInfo = Program.LoncherSettings.Files[i];
+				Label indicator = new Label();
+				Label fileDesc = new Label();
+				indicator.Text = "";
+				fileDesc.Text = fileInfo.Description ?? fileInfo.Path;
+				fileDesc.Font = new Font("Tahoma", 11F, FontStyle.Regular, GraphicsUnit.Pixel, 204);
+				fileDesc.ForeColor = Color.White;
+				fileDesc.AutoSize = true;
+				fileDesc.BackColor = Color.Transparent;
+				indicator.BackColor = Color.Transparent;
+				indicator.Size = new Size(9, 9);
+				indicator.Image = fileInfo.IsOK ? Resource1.green_dot : Resource1.red_dot;
+				indicator.Location = new Point(20, 18 + 22 * i);
+				fileDesc.Location = new Point(34, 15 + 22 * i);
+
+				fileIndicators_.Add(fileInfo, indicator);
+
+				statusPanel.Controls.Add(indicator);
+				statusPanel.Controls.Add(fileDesc);
+			}
+			Label padder = new Label();
+			padder.Text = "";
+			padder.Size = new Size(9, 1);
+			padder.BackColor = Color.Transparent;
+			padder.Location = new Point(30, 20 + 22 * Program.LoncherSettings.Files.Count);
+			statusPanel.Controls.Add(padder);
 
 			PerformLayout();
 		}
@@ -165,21 +264,24 @@ namespace YobaLoncher {
 					await webClient.DownloadFileTaskAsync(new Uri(fileInfo.Url), uploadFilename);
 				}
 				catch (Exception ex) {
-					YobaDialog.ShowDialog(string.Format(Locale.Get("CannotDownloadFile"), fileInfo.Path) + "\r\n" + ex.Message);
+					ShowDownloadError(string.Format(Locale.Get("CannotDownloadFile"), fileInfo.Path) + "\r\n" + ex.Message);
 				}
 			}
 		}
 
 		private void OnDownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e) {
 			downloadProgressTracker_.SetProgress(e.BytesReceived, e.TotalBytesToReceive);
-			updateProgressBar.Value = e.ProgressPercentage;
-			updateLabelText.Text = string.Format(
-				Locale.Get("DLRate")
-				, FormatBytes(e.BytesReceived)
-				, FormatBytes(e.TotalBytesToReceive)
-				, downloadProgressTracker_.GetBytesPerSecondString()
-				, currentFile_.Value.Description
-			);
+			if (DateTime.Now.Ticks > lastDlstringUpdate_ + 500000L) {
+				lastDlstringUpdate_ = DateTime.Now.Ticks;
+				updateProgressBar.Value = e.ProgressPercentage;
+				updateLabelText.Text = string.Format(
+					Locale.Get("DLRate")
+					, FormatBytes(e.BytesReceived)
+					, FormatBytes(e.TotalBytesToReceive)
+					, downloadProgressTracker_.GetBytesPerSecondString()
+					, currentFile_.Value.Description
+				);
+			}
 		}
 
 		private void OnDownloadCompleted(object sender, AsyncCompletedEventArgs e) {
@@ -188,9 +290,12 @@ namespace YobaLoncher {
 		}
 
 		private void DownloadNext() {
+			fileIndicators_[currentFile_.Value].Image = Resource1.yellow_dot;
 			currentFile_ = currentFile_.Next;
 			if (currentFile_ == null) {
 				string filename = "";
+				updateProgressBar.Value = 100;
+				updateLabelText.Text = Locale.Get("StatusCopyingFiles");
 				try {
 					foreach (FileInfo fileInfo in filesToUpload_) {
 						filename = fileInfo.Path;
@@ -207,20 +312,33 @@ namespace YobaLoncher {
 							File.Delete(ThePath + fileInfo.Path);
 						}
 						File.Move(PreloaderForm.UPDPATH + fileInfo.UploadAlias, ThePath + fileInfo.Path);
+						fileIndicators_[fileInfo].Image = Resource1.green_dot;
 					}
 					ReadyToGo_ = true;
+					updateLabelText.Text = Locale.Get("StatusUpdatingDone");
 					launchGameBtn.Text = Locale.Get("LaunchBtn");
+					launchGameBtn.Enabled = true;
 					if (YobaDialog.ShowDialog(Locale.Get("UpdateSuccessful"), YobaDialog.YesNoBtns) == DialogResult.Yes) {
 						launch();
 					}
 				}
+				catch (UnauthorizedAccessException ex) {
+					ShowDownloadError(string.Format(Locale.Get("DirectoryAccessDenied"), filename) + ":\r\n" + ex.Message);
+				}
 				catch (Exception ex) {
-					YobaDialog.ShowDialog(string.Format(Locale.Get("CannotMoveFile"), filename) + "\r\n" + ex.Message);
+					ShowDownloadError(string.Format(Locale.Get("CannotMoveFile"), filename) + ":\r\n" + ex.Message);
 				}
 			}
 			else {
 				DownloadFile(currentFile_.Value);
 			}
+		}
+
+		private void ShowDownloadError(string error) {
+			YobaDialog.ShowDialog(error);
+			launchGameBtn.Enabled = true;
+			updateProgressBar.Value = 0;
+			updateLabelText.Text = Locale.Get("StatusDownloadError");
 		}
 
 		public static string FormatBytes(long byteCount) {
@@ -242,6 +360,7 @@ namespace YobaLoncher {
 				launch();
 			}
 			else {
+				launchGameBtn.Enabled = false;
 				currentFile_ = filesToUpload_.First;
 				downloadProgressTracker_ = new DownloadProgressTracker(50, TimeSpan.FromMilliseconds(500));
 				DownloadFile(currentFile_.Value);
@@ -283,16 +402,22 @@ namespace YobaLoncher {
 		private void changelogMenuBtn_Click(object sender, EventArgs e) {
 			linksPanel.Visible = false;
 			statusPanel.Visible = false;
+			modsPanel.Visible = false;
+			changelogPanel.Visible = true;
 		}
 
 		private void checkResultMenuBtn_Click(object sender, EventArgs e) {
 			linksPanel.Visible = false;
 			statusPanel.Visible = true;
+			modsPanel.Visible = false;
+			changelogPanel.Visible = false;
 		}
 
 		private void linksMenuBtn_Click(object sender, EventArgs e) {
 			linksPanel.Visible = true;
 			statusPanel.Visible = false;
+			modsPanel.Visible = false;
+			changelogPanel.Visible = false;
 		}
 
 		private void closeButton_Click(object sender, EventArgs e) {

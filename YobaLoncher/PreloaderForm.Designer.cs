@@ -76,6 +76,7 @@
 			this.Text = "Yoba Loncher";
 			this.Load += new System.EventHandler(this.PreloaderForm_Load);
 			this.Shown += new System.EventHandler(this.PreloaderForm_ShownAsync);
+			this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.PreloaderForm_KeyUp);
 			this.ResumeLayout(false);
 			this.PerformLayout();
 

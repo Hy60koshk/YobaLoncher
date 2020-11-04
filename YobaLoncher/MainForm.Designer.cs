@@ -27,7 +27,7 @@
 			this.updateProgressBar = new System.Windows.Forms.ProgressBar();
 			this.updateLabelText = new System.Windows.Forms.Label();
 			this.draggingPanel = new System.Windows.Forms.Panel();
-			this.webBrowser1 = new System.Windows.Forms.WebBrowser();
+			this.changelogBrowser = new System.Windows.Forms.WebBrowser();
 			this.statusPanel = new System.Windows.Forms.Panel();
 			this.linksPanel = new System.Windows.Forms.Panel();
 			this.theToolTip = new System.Windows.Forms.ToolTip(this.components);
@@ -38,6 +38,11 @@
 			this.closeButton = new YobaLoncher.YobaCloseButton();
 			this.launchGameBtn = new YobaLoncher.YobaButton();
 			this.minimizeButton = new YobaLoncher.YobaCloseButton();
+			this.basePanel = new System.Windows.Forms.Panel();
+			this.modsPanel = new System.Windows.Forms.Panel();
+			this.changelogPanel = new System.Windows.Forms.Panel();
+			this.basePanel.SuspendLayout();
+			this.changelogPanel.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// updateProgressBar
@@ -68,27 +73,31 @@
 			this.draggingPanel.TabIndex = 103;
 			this.draggingPanel.MouseDown += new System.Windows.Forms.MouseEventHandler(this.draggingPanel_MouseDown);
 			// 
-			// webBrowser1
+			// changelogBrowser
 			// 
-			this.webBrowser1.Location = new System.Drawing.Point(153, 25);
-			this.webBrowser1.MinimumSize = new System.Drawing.Size(20, 20);
-			this.webBrowser1.Name = "webBrowser1";
-			this.webBrowser1.Size = new System.Drawing.Size(610, 330);
-			this.webBrowser1.TabIndex = 104;
+			this.changelogBrowser.Location = new System.Drawing.Point(36, 29);
+			this.changelogBrowser.MinimumSize = new System.Drawing.Size(20, 20);
+			this.changelogBrowser.Name = "changelogBrowser";
+			this.changelogBrowser.Size = new System.Drawing.Size(254, 147);
+			this.changelogBrowser.TabIndex = 104;
 			// 
 			// statusPanel
 			// 
-			this.statusPanel.Location = new System.Drawing.Point(120, 165);
+			this.statusPanel.AutoScroll = true;
+			this.statusPanel.BackColor = System.Drawing.Color.Transparent;
+			this.statusPanel.Location = new System.Drawing.Point(323, 16);
 			this.statusPanel.Name = "statusPanel";
-			this.statusPanel.Size = new System.Drawing.Size(345, 138);
+			this.statusPanel.Padding = new System.Windows.Forms.Padding(10);
+			this.statusPanel.Size = new System.Drawing.Size(263, 138);
 			this.statusPanel.TabIndex = 107;
 			this.statusPanel.Visible = false;
 			// 
 			// linksPanel
 			// 
-			this.linksPanel.Location = new System.Drawing.Point(23, 200);
+			this.linksPanel.BackColor = System.Drawing.Color.Transparent;
+			this.linksPanel.Location = new System.Drawing.Point(22, 236);
 			this.linksPanel.Name = "linksPanel";
-			this.linksPanel.Size = new System.Drawing.Size(200, 100);
+			this.linksPanel.Size = new System.Drawing.Size(282, 72);
 			this.linksPanel.TabIndex = 108;
 			this.linksPanel.Visible = false;
 			// 
@@ -217,17 +226,44 @@
 			this.minimizeButton.UseVisualStyleBackColor = false;
 			this.minimizeButton.Click += new System.EventHandler(this.minimizeButton_Click);
 			// 
+			// basePanel
+			// 
+			this.basePanel.Controls.Add(this.changelogPanel);
+			this.basePanel.Controls.Add(this.modsPanel);
+			this.basePanel.Controls.Add(this.linksPanel);
+			this.basePanel.Controls.Add(this.statusPanel);
+			this.basePanel.Location = new System.Drawing.Point(153, 25);
+			this.basePanel.Name = "basePanel";
+			this.basePanel.Size = new System.Drawing.Size(610, 330);
+			this.basePanel.TabIndex = 109;
+			// 
+			// modsPanel
+			// 
+			this.modsPanel.BackColor = System.Drawing.Color.Transparent;
+			this.modsPanel.Location = new System.Drawing.Point(323, 179);
+			this.modsPanel.Name = "ModsPanel";
+			this.modsPanel.Size = new System.Drawing.Size(254, 129);
+			this.modsPanel.TabIndex = 109;
+			this.modsPanel.Visible = false;
+			// 
+			// changelogPanel
+			// 
+			this.changelogPanel.BackColor = System.Drawing.Color.Transparent;
+			this.changelogPanel.Controls.Add(this.changelogBrowser);
+			this.changelogPanel.Location = new System.Drawing.Point(22, 16);
+			this.changelogPanel.Name = "ChangelogPanel";
+			this.changelogPanel.Size = new System.Drawing.Size(282, 199);
+			this.changelogPanel.TabIndex = 110;
+			this.changelogPanel.Visible = false;
+			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(62)))), ((int)(((byte)(63)))), ((int)(((byte)(64)))));
 			this.ClientSize = new System.Drawing.Size(780, 440);
-			this.Controls.Add(this.statusPanel);
-			this.Controls.Add(this.linksPanel);
 			this.Controls.Add(this.changelogMenuBtn);
 			this.Controls.Add(this.checkResultMenuBtn);
-			this.Controls.Add(this.webBrowser1);
 			this.Controls.Add(this.draggingPanel);
 			this.Controls.Add(this.linksMenuBtn);
 			this.Controls.Add(this.settingsButton);
@@ -236,11 +272,14 @@
 			this.Controls.Add(this.updateLabelText);
 			this.Controls.Add(this.updateProgressBar);
 			this.Controls.Add(this.minimizeButton);
+			this.Controls.Add(this.basePanel);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
 			this.Name = "MainForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Yoba Loncher";
 			this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
+			this.basePanel.ResumeLayout(false);
+			this.changelogPanel.ResumeLayout(false);
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -256,11 +295,14 @@
 		private YobaButton settingsButton;
 		private YobaButton linksMenuBtn;
 		private System.Windows.Forms.Panel draggingPanel;
-		private System.Windows.Forms.WebBrowser webBrowser1;
+		private System.Windows.Forms.WebBrowser changelogBrowser;
 		private YobaButton checkResultMenuBtn;
 		private YobaButton changelogMenuBtn;
 		private System.Windows.Forms.Panel statusPanel;
 		private System.Windows.Forms.Panel linksPanel;
 		private System.Windows.Forms.ToolTip theToolTip;
+		private System.Windows.Forms.Panel basePanel;
+		private System.Windows.Forms.Panel changelogPanel;
+		private System.Windows.Forms.Panel modsPanel;
 	}
 }
