@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -8,10 +9,57 @@ using Newtonsoft.Json;
 
 namespace YobaLoncher {
 	public enum StartPageEnum {
-		Changelog
-			, Status
-			, Links
-			, Mods
+		Changelog = 0
+		, Status = 1
+		, Links = 2
+		, Mods = 3
+	}
+
+	static class LauncherConfig {
+		public static string GameDir = null;
+		public static StartPageEnum StartPage = StartPageEnum.Status;
+		private const string CFGFILE = @"loncherData\loncher.cfg";
+
+		public static void Save() {
+			try {
+				File.WriteAllLines(CFGFILE, new string[] {
+					"path = " + GameDir
+					, "startpage = " + (int)StartPage
+				});
+			}
+			catch (Exception ex) {
+				YobaDialog.ShowDialog(Locale.Get("CannotWriteCfg") + ":\r\n" + ex.Message);
+			}
+		}
+
+		public static void Load() {
+			try {
+				if (File.Exists(CFGFILE)) {
+					string[] lines = File.ReadAllLines(CFGFILE);
+					foreach (string line in lines) {
+						if (line.Length > 0) {
+							if (line.StartsWith("path")) {
+								string[] vals = line.Split('=');
+								if (vals.Length > 1) {
+									GameDir = vals[1].Trim();
+								}
+							}
+							else if (line.StartsWith("startpage")) {
+								string[] vals = line.Split('=');
+								if (vals.Length > 1) {
+									if (int.TryParse(vals[1].Trim(), out int intval) && intval > -1 && intval < 4) {
+										StartPage = (StartPageEnum)intval;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			catch (Exception ex) {
+				YobaDialog.ShowDialog(Locale.Get("CannotReadCfg") + ":\r\n" + ex.Message);
+			}
+		}
 	}
 
 	class LauncherData {

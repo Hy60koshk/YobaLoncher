@@ -46,7 +46,7 @@
 			this.loadingLabel.Name = "loadingLabel";
 			this.loadingLabel.Size = new System.Drawing.Size(117, 13);
 			this.loadingLabel.TabIndex = 1;
-			this.loadingLabel.Text = "YobaLoncher loading...";
+			this.loadingLabel.Text = Program.LoncherName + " loading...";
 			// 
 			// loadingLabelError
 			// 

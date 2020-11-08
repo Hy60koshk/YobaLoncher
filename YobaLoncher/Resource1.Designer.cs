@@ -61,11 +61,29 @@ namespace YobaLoncher {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на .
+        ///   Ищет локализованную строку, похожую на 08.11.2020T17:49:08,31 
+        ///.
         /// </summary>
         internal static string BuildDate {
             get {
                 return ResourceManager.GetString("BuildDate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на BBLoncher
+        ///---========---
+        ///1.0.2
+        ///---========---
+        ///BBLöncher {3} (YL v.{0}-{1})
+        ///
+        ///Лаунчер для Battle Brothers с русификатором от ZoG
+        ///
+        ///Автор билда: Hy60koshk.
+        /// </summary>
+        internal static string BuildTargetOpts {
+            get {
+                return ResourceManager.GetString("BuildTargetOpts", resourceCulture);
             }
         }
         
@@ -76,6 +94,48 @@ namespace YobaLoncher {
             get {
                 object obj = ResourceManager.GetObject("green_dot", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на 
+        ///LaunchBtn = Запустить!
+        ///UpdateBtn = Обновить
+        ///OK = OK
+        ///Yes = Да
+        ///No = Нет
+        ///Done = Готово
+        ///Proceed = Продолжить
+        ///Cancel = Отмена
+        ///Close = Закрыть
+        ///Minimize = Свернуть
+        ///Help = Помощь
+        ///About = О программе
+        ///Apply = Применить
+        ///Quit = Выйти
+        ///Retry = Повторить
+        ///RunOffline = Оффлайн-режим
+        ///Browse = Обзор...
+        ///ChangelogBtn = История изменений
+        ///LinksBtn = Полезные ссылки
+        ///StatusBtn = Состояние файлов
+        ///SettingsBtn = Настройки
+        ///ChangelogTooltip = Показать список изменений
+        ///StatusTooltip = Показать результаты проверки  [остаток строки не уместился]&quot;;.
+        /// </summary>
+        internal static string locale_default {
+            get {
+                return ResourceManager.GetString("locale_default", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Byte[].
+        /// </summary>
+        internal static byte[] lucida_sans_unicode {
+            get {
+                object obj = ResourceManager.GetObject("lucida_sans_unicode", resourceCulture);
+                return ((byte[])(obj));
             }
         }
         

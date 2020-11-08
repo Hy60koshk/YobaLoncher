@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Text;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -40,6 +41,23 @@ namespace YobaLoncher {
 				font = new Font(comp.Font.Name, fs, FontStyle.Regular, GraphicsUnit.Pixel);
 			}
 			comp.Font = font;
+		}
+
+		public static void assertLucida(Control component) {
+			if (component.Font.Name != "Lucida Sans Unicode") {
+				try {
+					PrivateFontCollection pfc = new PrivateFontCollection();
+					byte[] fontbytes = Resource1.lucida_sans_unicode;
+					IntPtr fontMemPointer = Marshal.AllocCoTaskMem(fontbytes.Length);
+					Marshal.Copy(fontbytes, 0, fontMemPointer, fontbytes.Length);
+					pfc.AddMemoryFont(fontMemPointer, fontbytes.Length);
+					Marshal.FreeCoTaskMem(fontMemPointer);
+					component.Font = new Font(pfc.Families[0], 12F, FontStyle.Regular, GraphicsUnit.Pixel);
+				}
+				catch {
+					component.Font = new Font("Consolas", 12F, FontStyle.Regular, GraphicsUnit.Pixel, 204);
+				}
+			}
 		}
 
 		public static Color colorFromString(string str, Color def) {

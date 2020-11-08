@@ -47,6 +47,8 @@ namespace YobaLoncher {
 			, { "Cancel", "Cancel" }
 			, { "Close", "Close" }
 			, { "Minimize", "Minimize" }
+			, { "Help", "Help" }
+			, { "About", "About" }
 			, { "Apply", "Apply" }
 			, { "Quit", "Quit" }
 			, { "Retry", "Retry" }
@@ -61,6 +63,7 @@ namespace YobaLoncher {
 			, { "LinksTooltip", "Links" }
 			, { "SettingsTooltip", "Settings" }
 			, { "Error", "Error" }
+			, { "LoncherLoading", "{0} loading..." }
 			, { "DLRate", "Downloading: {3} - {0} of {1} @ {2}" }
 			, { "AllFilesIntact", "All files intact, we're ready to go." }
 			, { "FilesMissing", "{0} files are missing or out of date." }
@@ -72,10 +75,16 @@ namespace YobaLoncher {
 			, { "DirectoryAccessDenied", "Cannot move file \"{0}\": Access denied. Restart the Launcher as Administrator." }
 			, { "UpdateSuccessful", "All files are up to date!\r\nShall we start the game now?" }
 			, { "CannotWriteCfg", "Cannot write the configuration file" }
+			, { "CannotReadCfg", "Cannot read the configuration file" }
 			, { "PreloaderTitle", "YobaLöncher — Loading..." }
 			, { "MainFormTitle", "YobaLöncher" }
 			, { "SettingsTitle", "Settings" }
 			, { "SettingsGamePath", "The game installation folder" }
+			, { "SettingsOpeningPanel", "The menu panel shown at the start of the launcher" }
+			, { "SettingsOpeningPanelChangelog", "Changelog" }
+			, { "SettingsOpeningPanelStatus", "Filecheck results" }
+			, { "SettingsOpeningPanelLinks", "Links" }
+			, { "SettingsOpeningPanelMods", "Mods" }
 			, { "GamePathSelectionTitle", "Select the game folder" }
 			, { "EnterThePath", "Enter the path to the game installation folder" }
 			, { "NoExeInPath", "No game executable found in the specified folder!" }
@@ -84,6 +93,7 @@ namespace YobaLoncher {
 			, { "UpdDownloading", "Updating Yoba Löncher - Downloading {0} ..." }
 			, { "CannotGetLocaleFile", "Cannot get or apply localization files" }
 			, { "CannotGetImages", "Cannot get Images" }
+			, { "CannotSetBackground", "Cannot set custom background" }
 			, { "CannotGetFonts", "Cannot get Fonts" }
 			, { "CannotCheckFiles", "Cannot check files" }
 			, { "CannotParseConfig", "Cannot access or parse config" }

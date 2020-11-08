@@ -178,7 +178,7 @@ namespace YobaLoncher {
 			BackgroundImageLayout = ImageLayout.Stretch;
 			BackgroundImage = Program.LoncherSettings.Background;
 
-			switch (Program.LoncherSettings.StartPage) {
+			switch (LauncherConfig.StartPage) {
 				case StartPageEnum.Changelog:
 					changelogPanel.Visible = true;
 					break;
@@ -382,18 +382,12 @@ namespace YobaLoncher {
 			SettingsDialog settingsDialog = new SettingsDialog();
 			settingsDialog.Icon = Program.LoncherSettings.Icon;
 			if (settingsDialog.ShowDialog(this) == DialogResult.OK) {
-				string path = settingsDialog.GamePath;
-				if (path != Program.GamePath) {
-					try {
-						File.WriteAllLines(PreloaderForm.CFGFILE, new string[] {
-							"path = " + path
-						});
-						Hide();
-						new PreloaderForm(this).Show();
-					}
-					catch (Exception ex) {
-						YobaDialog.ShowDialog(Locale.Get("CannotWriteCfg") + ":\r\n" + ex.Message);
-					}
+				LauncherConfig.StartPage = settingsDialog.OpeningPanel;
+				LauncherConfig.GameDir = settingsDialog.GamePath;
+				LauncherConfig.Save();
+				if (LauncherConfig.GameDir != Program.GamePath) {
+					Hide();
+					new PreloaderForm(this).Show();
 				}
 				settingsDialog.Dispose();
 			}
@@ -432,6 +426,19 @@ namespace YobaLoncher {
 			if (e.Button == MouseButtons.Left) {
 				ReleaseCapture();
 				SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
+			}
+		}
+
+		private async void refreshButton_Click(object sender, EventArgs e) {
+			if (!Program.OfflineMode) {
+				await Program.LoncherSettings.InitChangelog();
+			
+				if (Program.LoncherSettings.ChangelogSite.Length > 0) {
+					changelogBrowser.Url = new Uri(Program.LoncherSettings.ChangelogSite);
+				}
+				else {
+					changelogBrowser.DocumentText = Program.LoncherSettings.ChangelogHtml;
+				}
 			}
 		}
 	}

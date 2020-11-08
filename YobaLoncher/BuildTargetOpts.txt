@@ -1,0 +1,9 @@
+YobaLoncher
+---========---
+0.2
+---========---
+YobaLöncher {0}-{1}
+
+Build target: Default
+
+Build author: Hy60koshk

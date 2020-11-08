@@ -39,8 +39,9 @@
 			this.launchGameBtn = new YobaLoncher.YobaButton();
 			this.minimizeButton = new YobaLoncher.YobaCloseButton();
 			this.basePanel = new System.Windows.Forms.Panel();
-			this.modsPanel = new System.Windows.Forms.Panel();
 			this.changelogPanel = new System.Windows.Forms.Panel();
+			this.modsPanel = new System.Windows.Forms.Panel();
+			this.refreshButton = new YobaLoncher.YobaButton();
 			this.basePanel.SuspendLayout();
 			this.changelogPanel.SuspendLayout();
 			this.SuspendLayout();
@@ -237,24 +238,42 @@
 			this.basePanel.Size = new System.Drawing.Size(610, 330);
 			this.basePanel.TabIndex = 109;
 			// 
-			// modsPanel
-			// 
-			this.modsPanel.BackColor = System.Drawing.Color.Transparent;
-			this.modsPanel.Location = new System.Drawing.Point(323, 179);
-			this.modsPanel.Name = "ModsPanel";
-			this.modsPanel.Size = new System.Drawing.Size(254, 129);
-			this.modsPanel.TabIndex = 109;
-			this.modsPanel.Visible = false;
-			// 
 			// changelogPanel
 			// 
 			this.changelogPanel.BackColor = System.Drawing.Color.Transparent;
 			this.changelogPanel.Controls.Add(this.changelogBrowser);
 			this.changelogPanel.Location = new System.Drawing.Point(22, 16);
-			this.changelogPanel.Name = "ChangelogPanel";
+			this.changelogPanel.Name = "changelogPanel";
 			this.changelogPanel.Size = new System.Drawing.Size(282, 199);
 			this.changelogPanel.TabIndex = 110;
 			this.changelogPanel.Visible = false;
+			// 
+			// modsPanel
+			// 
+			this.modsPanel.BackColor = System.Drawing.Color.Transparent;
+			this.modsPanel.Location = new System.Drawing.Point(323, 179);
+			this.modsPanel.Name = "modsPanel";
+			this.modsPanel.Size = new System.Drawing.Size(254, 129);
+			this.modsPanel.TabIndex = 109;
+			this.modsPanel.Visible = false;
+			// 
+			// refreshButton
+			// 
+			this.refreshButton.BackColor = System.Drawing.Color.Transparent;
+			this.refreshButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
+			this.refreshButton.FlatAppearance.BorderSize = 0;
+			this.refreshButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(11)))));
+			this.refreshButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Transparent;
+			this.refreshButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+			this.refreshButton.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, ((byte)(204)));
+			this.refreshButton.ForeColor = System.Drawing.Color.White;
+			this.refreshButton.Location = new System.Drawing.Point(112, 204);
+			this.refreshButton.Margin = new System.Windows.Forms.Padding(0);
+			this.refreshButton.Name = "refreshButton";
+			this.refreshButton.Size = new System.Drawing.Size(31, 28);
+			this.refreshButton.TabIndex = 110;
+			this.refreshButton.UseVisualStyleBackColor = false;
+			this.refreshButton.Click += new System.EventHandler(this.refreshButton_Click);
 			// 
 			// MainForm
 			// 
@@ -262,6 +281,7 @@
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(62)))), ((int)(((byte)(63)))), ((int)(((byte)(64)))));
 			this.ClientSize = new System.Drawing.Size(780, 440);
+			this.Controls.Add(this.refreshButton);
 			this.Controls.Add(this.changelogMenuBtn);
 			this.Controls.Add(this.checkResultMenuBtn);
 			this.Controls.Add(this.draggingPanel);
@@ -304,5 +324,6 @@
 		private System.Windows.Forms.Panel basePanel;
 		private System.Windows.Forms.Panel changelogPanel;
 		private System.Windows.Forms.Panel modsPanel;
+		private YobaButton refreshButton;
 	}
 }

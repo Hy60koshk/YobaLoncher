@@ -121,8 +121,17 @@
   <data name="BuildDate" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>BuildDate.txt;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;windows-1251</value>
   </data>
+  <data name="BuildTargetOpts" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>BuildTargetOpts.txt;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
   <data name="green_dot" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>pics\green_dot.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="locale_default" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>resources\locale_default.txt;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="lucida_sans_unicode" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>resources\lucida_sans_unicode.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="red_dot" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>pics\red_dot.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -131,6 +140,6 @@
     <value>pics\yellow_dot.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="yIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>y.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>resources\y.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

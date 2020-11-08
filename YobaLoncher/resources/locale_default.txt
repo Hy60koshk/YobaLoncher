@@ -1,0 +1,3 @@
+
+LoncherOutOfDate1 = The launcher is out of date. And it seems like Admin didn't provide the link to the newest version.[n][n]We cannot launch the launcher like this.
+LoncherOutOfDate2 = The updated launcher is still outdated or invalid.[n]It seems like Admin either didn't provide the link to the newest version or didn't update the checksum in the config.[n][n]We won't launch like this due to security reasons.

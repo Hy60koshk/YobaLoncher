@@ -38,14 +38,14 @@
 			// 
 			this.textBox1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(40)))), ((int)(((byte)(40)))), ((int)(((byte)(41)))));
 			this.textBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
-			this.textBox1.Font = new System.Drawing.Font("Consolas", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, ((byte)(204)));
+			this.textBox1.Font = new System.Drawing.Font("Lucida Sans Unicode", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, ((byte)(204)));
 			this.textBox1.ForeColor = System.Drawing.Color.White;
 			this.textBox1.HideSelection = false;
-			this.textBox1.Location = new System.Drawing.Point(2, 5);
+			this.textBox1.Location = new System.Drawing.Point(2, 4);
 			this.textBox1.Margin = new System.Windows.Forms.Padding(0);
 			this.textBox1.MaxLength = 1000;
 			this.textBox1.Name = "textBox1";
-			this.textBox1.Size = new System.Drawing.Size(396, 15);
+			this.textBox1.Size = new System.Drawing.Size(409, 19);
 			this.textBox1.TabIndex = 0;
 			this.textBox1.Text = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\xuemon\\Bottle Druttle Huyutle";
 			this.textBox1.WordWrap = false;
@@ -56,7 +56,7 @@
 			this.button1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
 			this.button1.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, ((byte)(204)));
 			this.button1.ForeColor = System.Drawing.Color.White;
-			this.button1.Location = new System.Drawing.Point(447, 68);
+			this.button1.Location = new System.Drawing.Point(452, 68);
 			this.button1.Margin = new System.Windows.Forms.Padding(0);
 			this.button1.Name = "button1";
 			this.button1.Size = new System.Drawing.Size(75, 27);
@@ -110,9 +110,9 @@
 			this.panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(40)))), ((int)(((byte)(40)))), ((int)(((byte)(41)))));
 			this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.panel1.Controls.Add(this.textBox1);
-			this.panel1.Location = new System.Drawing.Point(40, 68);
+			this.panel1.Location = new System.Drawing.Point(33, 68);
 			this.panel1.Name = "panel1";
-			this.panel1.Size = new System.Drawing.Size(402, 27);
+			this.panel1.Size = new System.Drawing.Size(415, 27);
 			this.panel1.TabIndex = 101;
 			// 
 			// draggingPanel

@@ -20,7 +20,6 @@ namespace YobaLoncher {
 		public const string IMGPATH = @"loncherData\images\";
 		public const string UPDPATH = @"loncherData\updates\";
 		public const string FNTPATH = @"loncherData\fonts\";
-		public const string CFGFILE = @"loncherData\loncher.cfg";
 
 		public PreloaderForm() : this(null) { }
 
@@ -34,12 +33,13 @@ namespace YobaLoncher {
 					this.BackgroundImage = new Bitmap(bgfile);
 				}
 				catch {
-					loadingLabelError.Text = "Failed to load your custom background";
+					loadingLabelError.Text = Locale.Get("CannotSetBackground");
 				}
 			}
 			wc_ = new WebClient();
 			wc_.Encoding = Encoding.UTF8;
 			Text = Locale.Get("PreloaderTitle");
+			loadingLabel.Text = string.Format(Locale.Get("LoncherLoading"), Program.LoncherName);
 		}
 
 		private void PreloaderForm_Load(object sender, EventArgs e) {
@@ -161,14 +161,8 @@ namespace YobaLoncher {
 			if (gamePathSelectForm.ShowDialog(this) == DialogResult.Yes) {
 				path = gamePathSelectForm.ThePath;
 				gamePathSelectForm.Dispose();
-				try {
-					File.WriteAllLines(CFGFILE, new string[] {
-						"path = " + path
-					});
-				}
-				catch (Exception ex) {
-					YobaDialog.ShowDialog(Locale.Get("CannotWriteCfg") + ":\r\n" + ex.Message);
-				}
+				LauncherConfig.GameDir = path;
+				LauncherConfig.Save();
 				if (path.Length == 0) {
 					path = Program.GamePath;
 				}
@@ -240,7 +234,8 @@ namespace YobaLoncher {
 					try {
 						downloadProgressTracker_ = new DownloadProgressTracker(50, TimeSpan.FromMilliseconds(500));
 						wc_.DownloadProgressChanged += new DownloadProgressChangedEventHandler(OnDownloadProgressChanged);
-						// false && 
+#if DEBUG
+#else
 						if (!FileChecker.CheckFileMD5(Application.ExecutablePath, Program.LoncherSettings.LoncherHash)) {
 							if (YU.stringHasText(Program.LoncherSettings.LoncherExe)) {
 								loadingLabel.Text = Locale.Get("UpdatingLoncher");
@@ -270,6 +265,7 @@ namespace YobaLoncher {
 								return;
 							}
 						}
+#endif
 					}
 					catch (Exception ex) {
 						YU.ErrorAndKill(Locale.Get("CannotUpdateLoncher") + ":\r\n" + ex.Message + "\r\n" + ex.StackTrace);
@@ -353,16 +349,9 @@ namespace YobaLoncher {
 						incProgress(5);
 						try {
 							string path = "";
-							if (File.Exists(CFGFILE)) {
-								string[] lines = File.ReadAllLines(CFGFILE);
-								foreach (string line in lines) {
-									if (line.Length > 0 && line.StartsWith("path")) {
-										string[] vals = line.Split('=');
-										if (vals.Length > 1) {
-											path = vals[1].Trim();
-										}
-									}
-								}
+							LauncherConfig.Load();
+							if (LauncherConfig.GameDir != null) {
+								path = LauncherConfig.GameDir;
 							}
 							else {
 								path = getSteamOrGogGameInstallPath(Program.LoncherSettings.SteamID, Program.LoncherSettings.GogID);
@@ -377,6 +366,9 @@ namespace YobaLoncher {
 									}
 								}
 								path = showPathSelection(path);
+								if (path is null) {
+									return;
+								}
 							}
 							incProgress(5);
 							if (path is null || path.Length == 0) {
@@ -577,16 +569,9 @@ namespace YobaLoncher {
 				try {
 					try {
 						string path = "";
-						if (File.Exists(CFGFILE)) {
-							string[] lines = File.ReadAllLines(CFGFILE);
-							foreach (string line in lines) {
-								if (line.Length > 0 && line.StartsWith("path")) {
-									string[] vals = line.Split('=');
-									if (vals.Length > 1) {
-										path = vals[1].Trim();
-									}
-								}
-							}
+						LauncherConfig.Load();
+						if (LauncherConfig.GameDir != null) {
+							path = LauncherConfig.GameDir;
 						}
 						else {
 							path = getSteamOrGogGameInstallPath(Program.LoncherSettings.SteamID, Program.LoncherSettings.GogID);

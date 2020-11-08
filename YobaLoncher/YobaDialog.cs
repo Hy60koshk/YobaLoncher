@@ -53,6 +53,10 @@ namespace YobaLoncher {
 
 		private void startInit() {
 			InitializeComponent();
+			int style = NativeWinAPI.GetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE);
+			style |= NativeWinAPI.WS_EX_COMPOSITED;
+			NativeWinAPI.SetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE, style);
+
 			Icon = Program.LoncherSettings != null ? (Program.LoncherSettings.Icon ?? Resource1.yIcon) : Resource1.yIcon;
 			MinimumSize = Size;
 			MaximumSize = Size;
@@ -246,6 +250,69 @@ namespace YobaLoncher {
 				FlatAppearance.MouseOverBackColor = YU.colorFromString(styleInfo.BgColorHover, BtnColors.Back);
 				FlatAppearance.MouseDownBackColor = YU.colorFromString(styleInfo.BgColorDown, BtnColors.MouseDown);
 			}
+		}
+	}
+
+	internal class YobaComboBox : ComboBox {
+		private const int WM_PAINT = 0xF;
+		private int buttonWidth = SystemInformation.HorizontalScrollBarArrowWidth + 4;
+		Color borderColor = Color.Gray;
+		public Color BorderColor {
+			get {
+				return borderColor;
+			}
+			set {
+				borderColor = value;
+				Invalidate();
+			}
+		}
+		protected override void WndProc(ref Message m) {
+			base.WndProc(ref m);
+			if (m.Msg == WM_PAINT && DropDownStyle != ComboBoxStyle.Simple) {
+				using (var g = Graphics.FromHwnd(Handle)) {
+					using (var p = new Pen(BorderColor)) {
+						using (var brush = new SolidBrush(BackColor)) {
+							g.FillRectangle(brush, Width - buttonWidth, 0, buttonWidth, Height);
+						}
+						using (var brush = new SolidBrush(ForeColor)) {
+							float xcenter = (float)Width - (float)buttonWidth / 2;
+							float ycenter = (float)Height / 2;
+							g.FillPolygon(brush, new PointF[] {
+								new PointF(xcenter - 4, ycenter)
+								, new PointF(xcenter, ycenter + 3)
+								, new PointF(xcenter + 4, ycenter)
+							});
+						}
+						g.DrawRectangle(p, 0, 0, Width - 1, Height - 1);
+						g.DrawLine(p, Width - buttonWidth, 0, Width - buttonWidth, Height);
+					}
+				}
+			}
+		}
+		protected override void OnDrawItem(DrawItemEventArgs e) {
+			base.OnDrawItem(e);
+		}
+		/*protected override void OnPaint(PaintEventArgs e) {
+			base.OnPaint(e);
+			using (var g = Graphics.FromHwnd(Handle)) {
+				using (var p = new Pen(BorderColor)) {
+					using (var brush = new SolidBrush(BackColor)) {
+						g.FillRectangle(brush, ClientRectangle);
+					}
+					g.DrawRectangle(p, ClientRectangle);
+					g.DrawLine(p, Width - buttonWidth - 2, 0, Width - buttonWidth - 2, Height);
+				}
+			}
+		}*/
+		public YobaComboBox() : base() {
+			BackColor = Color.FromArgb(40, 40, 41);
+			DropDownStyle = ComboBoxStyle.DropDownList;
+			FlatStyle = FlatStyle.Flat;
+			//SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.DoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
+			Font = new Font("Verdana", 12F, FontStyle.Regular, GraphicsUnit.Pixel, 204);
+			ForeColor = Color.White;
+			FormattingEnabled = true;
+			//DrawMode = DrawMode.OwnerDrawFixed;
 		}
 	}
 }

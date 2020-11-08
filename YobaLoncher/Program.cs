@@ -1,5 +1,7 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows.Forms;
 
 namespace YobaLoncher {
@@ -11,12 +13,13 @@ namespace YobaLoncher {
 		public static readonly string LoncherDataPath = LoncherPath + @"loncherData\";
 		public static string GamePath = "" + LoncherPath;
 		public static CheckResult GameFileCheckResult;
-		public static string VersionInfo => String.Format(_about, _version, _buildNumber);
-		private static string _version = "0.2.1.5";
+		public static string LoncherName => _loncherName;
+		public static string VersionInfo => String.Format(_about, _version, _buildNumber, _buildVersion);
+		private static string _loncherName = "YobaLoncher";
+		private static string _version = "0.2.3";
+		private static string _buildVersion = "0.2";
 		private static string _buildNumber = "";
-		private static string _about = "YobaLöncher {0}-{1}\r\n\r\n" +
-					"Build target: Battle Brothers ZoG Russifier\r\n\r\n" +
-					"Build author: Hy60koshk\r\n\r\n";
+		private static string _about = "YobaLöncher {0}-{1}";
 
 		/// <summary>
 		/// The main entry point for the application.
@@ -24,13 +27,51 @@ namespace YobaLoncher {
 		[STAThread]
 		static void Main() {
 			try {
-				string[] build = Resource1.BuildDate.Split('T');
-				DateTime date = DateTime.Parse(build[0]);
-				_buildNumber = "" + (date.Year - 2000) + date.Month.ToString("D2") + date.Day.ToString("D2") + build[1].Substring(0, 5).Remove(2, 1);
+				if (Resource1.BuildTargetOpts.Length > 0) {
+					string[] build = Resource1.BuildTargetOpts.Replace("\r", "").Split('\n');
+					if (build.Length > 0) {
+						ParseBuildData();
+					}
+					void ParseBuildData() {
+						StringBuilder sb = new StringBuilder();
+						int i = 0;
+						int stage = 0;
+						while (build.Length >= i) {
+							if (build.Length == i || build[i] == "---========---") {
+								switch (stage) {
+									case 0:
+										_loncherName = sb.ToString();
+										break;
+									case 1:
+										_buildVersion = sb.ToString();
+										break;
+									case 2:
+										_about = sb.ToString();
+										return;
+								}
+								sb.Clear();
+								stage++;
+							}
+							else {
+								sb.Append(build[i]);
+							}
+							i++;
+						}
+					};
+				}
+			}
+			catch (Exception ex) {
+				MessageBox.Show("Invalid Build info:\r\n\r\n" + ex.StackTrace);
+			}
+			try {
+				string[] buildDate = Resource1.BuildDate.Split('T');
+				DateTime date = DateTime.Parse(buildDate[0]);
+				_buildNumber = "" + (date.Year - 2000) + date.Month.ToString("D2") + date.Day.ToString("D2") + buildDate[1].Substring(0, 5).Remove(2, 1);
 			}
 			catch {
 				_buildNumber = Resource1.BuildDate.Split(',')[0];
 			}
+			Locale.LoadCustomLoc(Resource1.locale_default.Replace("\r", "").Split('\n'));
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
 			Application.Run(new PreloaderForm());
