@@ -40,6 +40,7 @@ namespace YobaLoncher {
 			wc_.Encoding = Encoding.UTF8;
 			Text = Locale.Get("PreloaderTitle");
 			loadingLabel.Text = string.Format(Locale.Get("LoncherLoading"), Program.LoncherName);
+			labelAbout.Text = Locale.Get("PressF1About");
 		}
 
 		private void PreloaderForm_Load(object sender, EventArgs e) {
@@ -651,7 +652,7 @@ namespace YobaLoncher {
 
 		private void PreloaderForm_KeyUp(object sender, KeyEventArgs e) {
 			if (e.KeyCode == Keys.F1) {
-				YobaDialog.ShowDialog(Program.VersionInfo);
+				YU.ShowHelpDialog();
 			}
 		}
 	}

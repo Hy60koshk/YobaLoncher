@@ -27,6 +27,7 @@
 			this.progressBar1 = new System.Windows.Forms.ProgressBar();
 			this.loadingLabel = new System.Windows.Forms.Label();
 			this.loadingLabelError = new System.Windows.Forms.Label();
+			this.labelAbout = new System.Windows.Forms.Label();
 			this.SuspendLayout();
 			// 
 			// progressBar1
@@ -46,7 +47,7 @@
 			this.loadingLabel.Name = "loadingLabel";
 			this.loadingLabel.Size = new System.Drawing.Size(117, 13);
 			this.loadingLabel.TabIndex = 1;
-			this.loadingLabel.Text = Program.LoncherName + " loading...";
+			this.loadingLabel.Text = "YobaLoncher loading...";
 			// 
 			// loadingLabelError
 			// 
@@ -58,6 +59,17 @@
 			this.loadingLabelError.Size = new System.Drawing.Size(0, 13);
 			this.loadingLabelError.TabIndex = 2;
 			// 
+			// labelAbout
+			// 
+			this.labelAbout.BackColor = System.Drawing.Color.Transparent;
+			this.labelAbout.ForeColor = System.Drawing.Color.White;
+			this.labelAbout.Location = new System.Drawing.Point(15, 9);
+			this.labelAbout.Name = "labelAbout";
+			this.labelAbout.Size = new System.Drawing.Size(373, 46);
+			this.labelAbout.TabIndex = 3;
+			this.labelAbout.Text = "Press F1";
+			this.labelAbout.TextAlign = System.Drawing.ContentAlignment.TopRight;
+			// 
 			// PreloaderForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -65,6 +77,7 @@
 			this.BackColor = System.Drawing.Color.DimGray;
 			this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
 			this.ClientSize = new System.Drawing.Size(400, 300);
+			this.Controls.Add(this.labelAbout);
 			this.Controls.Add(this.loadingLabelError);
 			this.Controls.Add(this.loadingLabel);
 			this.Controls.Add(this.progressBar1);
@@ -87,6 +100,7 @@
 		private System.Windows.Forms.ProgressBar progressBar1;
 		private System.Windows.Forms.Label loadingLabel;
 		private System.Windows.Forms.Label loadingLabelError;
+		private System.Windows.Forms.Label labelAbout;
 	}
 }
 

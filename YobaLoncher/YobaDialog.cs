@@ -32,11 +32,13 @@ namespace YobaLoncher {
 			}
 		};
 
+		public Label MessageLabel => messageLabel;
+
 		public YobaDialog() : this("", null) { }
 		public YobaDialog(string message) : this(message, null) { }
 		internal YobaDialog(string message, UIElement[] buttons) {
 			startInit();
-			label1.Text = message;
+			messageLabel.Text = message;
 			initButtons(buttons);
 		}
 		internal YobaDialog(Size size) : this("", size, null) { }
@@ -44,18 +46,23 @@ namespace YobaLoncher {
 		internal YobaDialog(Size size, UIElement[] buttons) : this("", size, buttons) { }
 		internal YobaDialog(string message, Size size, UIElement[] buttons) {
 			startInit();
-			label1.Text = message;
+			messageLabel.Text = message;
 			Size = size;
 			MinimumSize = size;
 			MaximumSize = size;
 			initButtons(buttons);
 		}
 
+		private int _originalWinStyle = -1;
+
+		public void ResetWinStyle() {
+			NativeWinAPI.SetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE, _originalWinStyle);
+		}
+
 		private void startInit() {
 			InitializeComponent();
-			int style = NativeWinAPI.GetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE);
-			style |= NativeWinAPI.WS_EX_COMPOSITED;
-			NativeWinAPI.SetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE, style);
+			_originalWinStyle = NativeWinAPI.GetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE);
+			NativeWinAPI.SetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE, _originalWinStyle | NativeWinAPI.WS_EX_COMPOSITED);
 
 			Icon = Program.LoncherSettings != null ? (Program.LoncherSettings.Icon ?? Resource1.yIcon) : Resource1.yIcon;
 			MinimumSize = Size;
@@ -111,11 +118,11 @@ namespace YobaLoncher {
 					}
 				}
 			}
-			if (label1.Text.Length > 0) {
-				label1.Size = new Size(Size.Width - 56, Size.Height - 84);
+			if (messageLabel.Text.Length > 0) {
+				messageLabel.Size = new Size(Size.Width - 56, Size.Height - 84);
 			}
 			else {
-				Controls.Remove(label1);
+				Controls.Remove(messageLabel);
 			}
 			closeButton.UpdateLocation();//Location = new Point(Size.Width - 30, -3);
 			draggingPanel.Size = new Size(Size.Width - 32, 24);

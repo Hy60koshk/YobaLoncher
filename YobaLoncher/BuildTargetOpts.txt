@@ -7,3 +7,5 @@ YobaLöncher {0}-{1}
 Build target: Default
 
 Build author: Hy60koshk
+---========---
+Disclaimer goes here

@@ -13,13 +13,17 @@ namespace YobaLoncher {
 		public static readonly string LoncherDataPath = LoncherPath + @"loncherData\";
 		public static string GamePath = "" + LoncherPath;
 		public static CheckResult GameFileCheckResult;
+
+		public static string Disclaimer => _disclaimer;
 		public static string LoncherName => _loncherName;
 		public static string VersionInfo => String.Format(_about, _version, _buildNumber, _buildVersion);
+
 		private static string _loncherName = "YobaLoncher";
-		private static string _version = "0.2.3";
+		private static string _version = "0.2.3.6";
 		private static string _buildVersion = "0.2";
 		private static string _buildNumber = "";
 		private static string _about = "YobaLöncher {0}-{1}";
+		private static string _disclaimer = "";
 
 		/// <summary>
 		/// The main entry point for the application.
@@ -35,6 +39,7 @@ namespace YobaLoncher {
 					void ParseBuildData() {
 						StringBuilder sb = new StringBuilder();
 						int i = 0;
+						int li = 0;
 						int stage = 0;
 						while (build.Length >= i) {
 							if (build.Length == i || build[i] == "---========---") {
@@ -47,13 +52,21 @@ namespace YobaLoncher {
 										break;
 									case 2:
 										_about = sb.ToString();
+										break;
+									case 3:
+										_disclaimer = sb.ToString();
 										return;
 								}
 								sb.Clear();
+								li = 0;
 								stage++;
 							}
 							else {
+								if (li > 0) {
+									sb.Append("\r\n");
+								}
 								sb.Append(build[i]);
+								li++;
 							}
 							i++;
 						}
@@ -66,7 +79,7 @@ namespace YobaLoncher {
 			try {
 				string[] buildDate = Resource1.BuildDate.Split('T');
 				DateTime date = DateTime.Parse(buildDate[0]);
-				_buildNumber = "" + (date.Year - 2000) + date.Month.ToString("D2") + date.Day.ToString("D2") + buildDate[1].Substring(0, 5).Remove(2, 1);
+				_buildNumber = "" + (date.Year - 2000) + date.Month.ToString("D2") + date.Day.ToString("D2") + buildDate[1].Substring(0, 5).Replace(' ', '0').Remove(2, 1);
 			}
 			catch {
 				_buildNumber = Resource1.BuildDate.Split(',')[0];

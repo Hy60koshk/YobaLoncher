@@ -24,7 +24,7 @@
 		/// </summary>
 		private void InitializeComponent() {
 			this.closeButton = new YobaLoncher.YobaCloseButton();
-			this.label1 = new System.Windows.Forms.Label();
+			this.messageLabel = new System.Windows.Forms.Label();
 			this.draggingPanel = new System.Windows.Forms.Panel();
 			this.SuspendLayout();
 			// 
@@ -47,12 +47,12 @@
 			// 
 			// label1
 			// 
-			this.label1.Font = new System.Drawing.Font("Verdana", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, ((byte)(204)));
-			this.label1.Location = new System.Drawing.Point(28, 28);
-			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(342, 92);
-			this.label1.TabIndex = 2;
-			this.label1.Text = "label1";
+			this.messageLabel.Font = new System.Drawing.Font("Verdana", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, ((byte)(204)));
+			this.messageLabel.Location = new System.Drawing.Point(28, 28);
+			this.messageLabel.Name = "label1";
+			this.messageLabel.Size = new System.Drawing.Size(342, 92);
+			this.messageLabel.TabIndex = 2;
+			this.messageLabel.Text = "label1";
 			// 
 			// draggingPanel
 			// 
@@ -70,7 +70,7 @@
 			this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(62)))), ((int)(((byte)(63)))), ((int)(((byte)(64)))));
 			this.ClientSize = new System.Drawing.Size(411, 173);
 			this.Controls.Add(this.draggingPanel);
-			this.Controls.Add(this.label1);
+			this.Controls.Add(this.messageLabel);
 			this.Controls.Add(this.closeButton);
 			this.ForeColor = System.Drawing.Color.White;
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
@@ -83,7 +83,7 @@
 		#endregion
 
 		private YobaCloseButton closeButton;
-		private System.Windows.Forms.Label label1;
+		private System.Windows.Forms.Label messageLabel;
 		private System.Windows.Forms.Panel draggingPanel;
 	}
 }

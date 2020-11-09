@@ -73,14 +73,18 @@ namespace YobaLoncher {
 		}
 		public static bool CheckFileMD5(string root, FileInfo file) {
 			if (file.Path == null || file.Path.Length == 0) {
-				throw new Exception("No file path provided.\r\nContact the guy who set the launcher up.");
+				throw new Exception(Locale.Get("FileCheckNoFilePath"));
 			}
-			if (File.Exists(root + file.Path)) {
+			if (file.Path.Contains(':') || file.Path.Contains('?') || file.Path.Contains('*') || file.Path.Contains("\\\\") || file.Path.Contains("//")) {
+				throw new Exception(string.Format(Locale.Get("FileCheckNoFilePath"), file.Path));
+			}
+			string filepath = root + file.Path;
+			if (File.Exists(filepath) && (new System.IO.FileInfo(filepath).Length > 0)) {
 				if (file.Hashes == null || file.Hashes.Count == 0) {
 					return true;
 				}
 				byte[] hash;
-				using (FileStream stream = File.OpenRead(root + file.Path)) {
+				using (FileStream stream = File.OpenRead(filepath)) {
 					hash = MD5.ComputeHash(stream);
 				}
 				StringBuilder hashSB = new StringBuilder(hash.Length);

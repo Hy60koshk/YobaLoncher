@@ -27,7 +27,6 @@ namespace YobaLoncher {
 		private Dictionary<FileInfo, Label> fileIndicators_ = new Dictionary<FileInfo, Label>();
 		private LinkedListNode<FileInfo> currentFile_ = null;
 		private bool ReadyToGo_ = false;
-		private System.Security.Cryptography.MD5 md5_;
 
 		private long lastDlstringUpdate_ = -1;
 
@@ -36,9 +35,8 @@ namespace YobaLoncher {
 
 			InitializeComponent();
 
-			int style = NativeWinAPI.GetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE);
-			style |= NativeWinAPI.WS_EX_COMPOSITED;
-			NativeWinAPI.SetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE, style);
+			int winstyle = NativeWinAPI.GetWindowLong(basePanel.Handle, NativeWinAPI.GWL_EXSTYLE);
+			NativeWinAPI.SetWindowLong(basePanel.Handle, NativeWinAPI.GWL_EXSTYLE, winstyle | NativeWinAPI.WS_EX_COMPOSITED);
 
 			SuspendLayout();
 
@@ -222,21 +220,6 @@ namespace YobaLoncher {
 			statusPanel.Controls.Add(padder);
 
 			PerformLayout();
-		}
-
-		private bool checkFileMD5(string path, string correctHash) {
-			byte[] hash;
-			if (md5_ == null) {
-				md5_ = System.Security.Cryptography.MD5.Create();
-			}
-			using (FileStream stream = File.OpenRead(path)) {
-				hash = md5_.ComputeHash(stream);
-			}
-			StringBuilder hashSB = new StringBuilder(hash.Length);
-			for (int i = 0; i < hash.Length; i++) {
-				hashSB.Append(hash[i].ToString("X2"));
-			}
-			return correctHash.ToUpper().Equals(hashSB.ToString());
 		}
 
 		private async void DownloadFile(FileInfo fileInfo) {

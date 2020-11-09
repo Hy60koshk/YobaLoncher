@@ -64,6 +64,7 @@ namespace YobaLoncher {
 			, { "SettingsTooltip", "Settings" }
 			, { "Error", "Error" }
 			, { "LoncherLoading", "{0} loading..." }
+			, { "PressF1About", "Press F1 to show About" }
 			, { "DLRate", "Downloading: {3} - {0} of {1} @ {2}" }
 			, { "AllFilesIntact", "All files intact, we're ready to go." }
 			, { "FilesMissing", "{0} files are missing or out of date." }
@@ -104,6 +105,8 @@ namespace YobaLoncher {
 			, { "LoncherOutOfDate2", "New Launcher is still out of date.\r\n\r\nAdmin eblan did not update either the link or the launcher executable download link.\r\nPoetomu we will just ne dadim zapustit the Launcher, mamke admina privet." }
 			, { "WebClientError", "Couldn't get settings for the Löncher.\r\nProbably, you're out of Ethernet." }
 			, { "WebClientErrorOffline", "Couldn't get settings for the Löncher.\r\nProbably, you're out of Ethernet.\r\n\r\nShall we try to connect again, or make an attempt to start the louncher in offline mode?" }
+			, { "FileCheckNoFilePath", "No file path provided.\r\nContact the guy who set the launcher up." }
+			, { "FileCheckInvalidFilePath", "The file path is absolute or invalid.\r\nAbsolute path are forbidden due to security reasons.\r\nContact the guy who set the launcher up.\r\n\r\nThe path:\r\n{0}" }
 		};
 	}
 }

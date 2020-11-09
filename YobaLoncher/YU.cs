@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Text;
 using System.Linq;
@@ -80,6 +81,37 @@ namespace YobaLoncher {
 		public static void ErrorAndKill(string msg) {
 			if (YobaDialog.ShowDialog(msg) != DialogResult.Ignore) {
 				Application.Exit();
+			}
+		}
+
+		internal static void ShowHelpDialog() {
+			if (Program.Disclaimer.Length > 0) {
+				YobaDialog helpDialog = new YobaDialog(Program.VersionInfo, new Size(400, 400));
+				RichTextBox rtb = new RichTextBox();
+				
+				rtb.BorderStyle = BorderStyle.None;
+				rtb.Font = new Font("Verdana", 12F, FontStyle.Regular, GraphicsUnit.Pixel);
+				//rtb.BackColor = Color.DimGray;
+				//rtb.ForeColor = Color.White;
+				rtb.ForeColor = Color.Black;
+				rtb.BackColor = Color.LightGray;
+				rtb.Location = new Point(16, 120);
+				rtb.ReadOnly = true;
+				rtb.Size = new Size(368, 224);
+				rtb.TabIndex = 2;
+				rtb.Text = Program.Disclaimer;
+				rtb.LinkClicked += (sa, ea) => {
+					Process.Start(ea.LinkText);
+				};
+				helpDialog.MessageLabel.Size = new Size(helpDialog.Size.Width - 56, 92);
+				helpDialog.Controls.Add(rtb);
+				helpDialog.Shown += (o, e) => {
+					helpDialog.ResetWinStyle();
+				};
+				helpDialog.ShowDialog();
+			}
+			else {
+				YobaDialog.ShowDialog(Program.VersionInfo);
 			}
 		}
 	}
