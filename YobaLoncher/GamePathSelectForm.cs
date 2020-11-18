@@ -1,14 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Drawing.Text;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace YobaLoncher {
 	public partial class GamePathSelectForm : Form {
@@ -20,9 +13,14 @@ namespace YobaLoncher {
 		public static extern bool ReleaseCapture();
 
 		public string ThePath = "";
+		private CommonOpenFileDialog folderBrowserDialog;
 
 		public GamePathSelectForm() {
 			InitializeComponent();
+
+			folderBrowserDialog = new CommonOpenFileDialog() {
+				IsFolderPicker = true
+			};
 
 			int style = NativeWinAPI.GetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE);
 			style |= NativeWinAPI.WS_EX_COMPOSITED;
@@ -39,9 +37,9 @@ namespace YobaLoncher {
 		}
 
 		private void button1_Click(object sender, EventArgs e) {
-			folderBrowserDialog1.SelectedPath = textBox1.Text;
-			if (folderBrowserDialog1.ShowDialog() == DialogResult.OK) {
-				textBox1.Text = folderBrowserDialog1.SelectedPath;
+			folderBrowserDialog.InitialDirectory = textBox1.Text;
+			if (folderBrowserDialog.ShowDialog() == CommonFileDialogResult.Ok) {
+				textBox1.Text = folderBrowserDialog.FileName;
 			}
 		}
 

@@ -61,7 +61,7 @@ namespace YobaLoncher {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на 08.11.2020T17:49:08,31 
+        ///   Ищет локализованную строку, похожую на 11.11.2020T16:50:23,27 
         ///.
         /// </summary>
         internal static string BuildDate {
@@ -73,13 +73,18 @@ namespace YobaLoncher {
         /// <summary>
         ///   Ищет локализованную строку, похожую на BBLoncher
         ///---========---
-        ///1.0.2
+        ///1.0.5
         ///---========---
-        ///BBLöncher {3} (YL v.{0}-{1})
+        ///BBLöncher {2} (YL v.{0}-{1})
         ///
         ///Лаунчер для Battle Brothers с русификатором от ZoG
         ///
-        ///Автор билда: Hy60koshk.
+        ///Автор билда: Hy60koshk
+        ///---========---
+        ///
+        ///Через приложение BBLoncher мы не собираем совершенно никакой информации о пользователях.
+        ///Все взаимодействия с сетью осуществляются только для получения от сервера информации, необходимой для работы лаунчера, и для скачивания обновлений игры и модов к ней. Наружу ничего не отправляется, даже информация о состоянии самого лаунчера.
+        /// [остаток строки не уместился]&quot;;.
         /// </summary>
         internal static string BuildTargetOpts {
             get {
@@ -146,6 +151,30 @@ namespace YobaLoncher {
             get {
                 object obj = ResourceManager.GetObject("red_dot", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на 
+        ///&lt;!DOCTYPE html&gt;
+        ///&lt;html&gt;
+        ///&lt;head&gt;
+        ///    &lt;meta http-equiv=&apos;Content-Type&apos; content=&apos;text/html; charset=UTF-8&apos; /&gt;
+        ///    &lt;meta http-equiv=&quot;X-UA-Compatible&quot; content=&quot;IE=11&quot; /&gt;
+        ///    &lt;title&gt;Yoba Löncher&lt;/title&gt;
+        ///
+        ///    &lt;script&gt;
+        ///        /*var indexraw = &apos;[[[CHANGELOG]]]&apos;;
+        ///
+        ///        var index = [];
+        ///        var indesplit = indexraw.split(&apos;=====|=|=|=====&apos;);
+        ///        for (var i = 0; i &lt; indesplit.length; i++) {
+        ///        var pair = indesplit[i].split(&apos;=====Content=====&apos;);
+        ///        index.push({ Title: pair[0], Content: p [остаток строки не уместился]&quot;;.
+        /// </summary>
+        internal static string status_template {
+            get {
+                return ResourceManager.GetString("status_template", resourceCulture);
             }
         }
         

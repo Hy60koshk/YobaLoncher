@@ -75,6 +75,7 @@ namespace YobaLoncher {
 			, { "CannotMoveFile", "Cannot move file \"{0}\"" }
 			, { "DirectoryAccessDenied", "Cannot move file \"{0}\": Access denied. Restart the Launcher as Administrator." }
 			, { "UpdateSuccessful", "All files are up to date!\r\nShall we start the game now?" }
+			, { "LauncherIsInOfflineMode", "Launcher is in Offline mode" }
 			, { "CannotWriteCfg", "Cannot write the configuration file" }
 			, { "CannotReadCfg", "Cannot read the configuration file" }
 			, { "PreloaderTitle", "YobaLöncher — Loading..." }
@@ -86,9 +87,14 @@ namespace YobaLoncher {
 			, { "SettingsOpeningPanelStatus", "Filecheck results" }
 			, { "SettingsOpeningPanelLinks", "Links" }
 			, { "SettingsOpeningPanelMods", "Mods" }
+			, { "SettingsOfflineMode", "Offline mode" }
+			, { "SettingsOfflineModeTooltip", "Offline mode" }
+			, { "OfflineModeSet", "Launcher set to run in offline mode. Restart now?" }
+			, { "OnlineModeSet", "Launcher set to run in online mode. Restart now?" }
 			, { "GamePathSelectionTitle", "Select the game folder" }
 			, { "EnterThePath", "Enter the path to the game installation folder" }
 			, { "NoExeInPath", "No game executable found in the specified folder!" }
+			, { "GogGalaxyDetected", "We've found GOG Galaxy on your computer. Should we run the game via Galaxy?" }
 			, { "OldGameVersion", "Your current version of the game ({0}) is not supported!" }
 			, { "UpdatingLoncher", "Updating Yoba Löncher..." }
 			, { "UpdDownloading", "Updating Yoba Löncher - Downloading {0} ..." }
@@ -97,6 +103,7 @@ namespace YobaLoncher {
 			, { "CannotSetBackground", "Cannot set custom background" }
 			, { "CannotGetFonts", "Cannot get Fonts" }
 			, { "CannotCheckFiles", "Cannot check files" }
+			, { "MultipleFileBlocksForSingleGameVersion", "Multiple file blocks for single game version: {0}" }
 			, { "CannotParseConfig", "Cannot access or parse config" }
 			, { "CannotLoadIcon", "Cannot load the icon" }
 			, { "CannotParseSettings", "Cannot parse the Settings file" }

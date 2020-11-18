@@ -24,19 +24,19 @@
 		/// </summary>
 		private void InitializeComponent() {
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(PreloaderForm));
-			this.progressBar1 = new System.Windows.Forms.ProgressBar();
+			this._progressBar1 = new System.Windows.Forms.ProgressBar();
 			this.loadingLabel = new System.Windows.Forms.Label();
 			this.loadingLabelError = new System.Windows.Forms.Label();
 			this.labelAbout = new System.Windows.Forms.Label();
 			this.SuspendLayout();
 			// 
-			// progressBar1
+			// _progressBar1
 			// 
-			this.progressBar1.Location = new System.Drawing.Point(12, 277);
-			this.progressBar1.Name = "progressBar1";
-			this.progressBar1.Size = new System.Drawing.Size(376, 11);
-			this.progressBar1.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
-			this.progressBar1.TabIndex = 0;
+			this._progressBar1.Location = new System.Drawing.Point(12, 277);
+			this._progressBar1.Name = "_progressBar1";
+			this._progressBar1.Size = new System.Drawing.Size(376, 11);
+			this._progressBar1.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
+			this._progressBar1.TabIndex = 0;
 			// 
 			// loadingLabel
 			// 
@@ -80,14 +80,13 @@
 			this.Controls.Add(this.labelAbout);
 			this.Controls.Add(this.loadingLabelError);
 			this.Controls.Add(this.loadingLabel);
-			this.Controls.Add(this.progressBar1);
+			this.Controls.Add(this._progressBar1);
 			this.DoubleBuffered = true;
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
 			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.Name = "PreloaderForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Yoba Loncher";
-			this.Load += new System.EventHandler(this.PreloaderForm_Load);
 			this.Shown += new System.EventHandler(this.PreloaderForm_ShownAsync);
 			this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.PreloaderForm_KeyUp);
 			this.ResumeLayout(false);
@@ -97,7 +96,7 @@
 
 		#endregion
 
-		private System.Windows.Forms.ProgressBar progressBar1;
+		private System.Windows.Forms.ProgressBar _progressBar1;
 		private System.Windows.Forms.Label loadingLabel;
 		private System.Windows.Forms.Label loadingLabelError;
 		private System.Windows.Forms.Label labelAbout;

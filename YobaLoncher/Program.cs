@@ -6,7 +6,11 @@ using System.Windows.Forms;
 
 namespace YobaLoncher {
 	static class Program {
+#if DEBUG
+		public readonly static string SETTINGS_URL = "https://www.dropbox.com/s/tlweb401krzcw9u/settings.json?dl=1";//"https://koshk.ru/brotherstest/yl/settings.json";
+#else
 		public readonly static string SETTINGS_URL = "https://www.dropbox.com/s/tlweb401krzcw9u/settings.json?dl=1";//"https://koshk.ru/brotherstest/settings.json";
+#endif
 		public static LauncherData LoncherSettings;
 		public static bool OfflineMode = false;
 		public static readonly string LoncherPath = Application.ExecutablePath.Substring(0, Application.ExecutablePath.LastIndexOf('\\') + 1);
@@ -19,7 +23,7 @@ namespace YobaLoncher {
 		public static string VersionInfo => String.Format(_about, _version, _buildNumber, _buildVersion);
 
 		private static string _loncherName = "YobaLoncher";
-		private static string _version = "0.2.3.6";
+		private static string _version = "0.2.4.4";
 		private static string _buildVersion = "0.2";
 		private static string _buildNumber = "";
 		private static string _about = "YobaLöncher {0}-{1}";

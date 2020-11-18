@@ -29,6 +29,7 @@
 			this.draggingPanel = new System.Windows.Forms.Panel();
 			this.changelogBrowser = new System.Windows.Forms.WebBrowser();
 			this.statusPanel = new System.Windows.Forms.Panel();
+			this.statusBowser = new System.Windows.Forms.WebBrowser();
 			this.linksPanel = new System.Windows.Forms.Panel();
 			this.theToolTip = new System.Windows.Forms.ToolTip(this.components);
 			this.changelogMenuBtn = new YobaLoncher.YobaButton();
@@ -40,8 +41,10 @@
 			this.minimizeButton = new YobaLoncher.YobaCloseButton();
 			this.basePanel = new System.Windows.Forms.Panel();
 			this.changelogPanel = new System.Windows.Forms.Panel();
+			this.loncherIsOfflineLable = new System.Windows.Forms.Label();
 			this.modsPanel = new System.Windows.Forms.Panel();
 			this.refreshButton = new YobaLoncher.YobaButton();
+			this.statusPanel.SuspendLayout();
 			this.basePanel.SuspendLayout();
 			this.changelogPanel.SuspendLayout();
 			this.SuspendLayout();
@@ -84,14 +87,21 @@
 			// 
 			// statusPanel
 			// 
-			this.statusPanel.AutoScroll = true;
 			this.statusPanel.BackColor = System.Drawing.Color.Transparent;
+			this.statusPanel.Controls.Add(this.statusBowser);
 			this.statusPanel.Location = new System.Drawing.Point(323, 16);
 			this.statusPanel.Name = "statusPanel";
-			this.statusPanel.Padding = new System.Windows.Forms.Padding(10);
 			this.statusPanel.Size = new System.Drawing.Size(263, 138);
 			this.statusPanel.TabIndex = 107;
 			this.statusPanel.Visible = false;
+			// 
+			// statusBowser
+			// 
+			this.statusBowser.Location = new System.Drawing.Point(29, 29);
+			this.statusBowser.MinimumSize = new System.Drawing.Size(20, 20);
+			this.statusBowser.Name = "statusBowser";
+			this.statusBowser.Size = new System.Drawing.Size(221, 67);
+			this.statusBowser.TabIndex = 0;
 			// 
 			// linksPanel
 			// 
@@ -241,12 +251,24 @@
 			// changelogPanel
 			// 
 			this.changelogPanel.BackColor = System.Drawing.Color.Transparent;
+			this.changelogPanel.Controls.Add(this.loncherIsOfflineLable);
 			this.changelogPanel.Controls.Add(this.changelogBrowser);
 			this.changelogPanel.Location = new System.Drawing.Point(22, 16);
 			this.changelogPanel.Name = "changelogPanel";
 			this.changelogPanel.Size = new System.Drawing.Size(282, 199);
 			this.changelogPanel.TabIndex = 110;
 			this.changelogPanel.Visible = false;
+			// 
+			// loncherIsOfflineLable
+			// 
+			this.loncherIsOfflineLable.AutoSize = true;
+			this.loncherIsOfflineLable.Font = new System.Drawing.Font("Verdana", 13F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, ((byte)(204)));
+			this.loncherIsOfflineLable.ForeColor = System.Drawing.Color.White;
+			this.loncherIsOfflineLable.Location = new System.Drawing.Point(24, 26);
+			this.loncherIsOfflineLable.Name = "loncherIsOfflineLable";
+			this.loncherIsOfflineLable.Size = new System.Drawing.Size(46, 16);
+			this.loncherIsOfflineLable.TabIndex = 105;
+			this.loncherIsOfflineLable.Text = "label1";
 			// 
 			// modsPanel
 			// 
@@ -298,8 +320,10 @@
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Yoba Loncher";
 			this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
+			this.statusPanel.ResumeLayout(false);
 			this.basePanel.ResumeLayout(false);
 			this.changelogPanel.ResumeLayout(false);
+			this.changelogPanel.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -325,5 +349,7 @@
 		private System.Windows.Forms.Panel changelogPanel;
 		private System.Windows.Forms.Panel modsPanel;
 		private YobaButton refreshButton;
+		private System.Windows.Forms.WebBrowser statusBowser;
+		private System.Windows.Forms.Label loncherIsOfflineLable;
 	}
 }

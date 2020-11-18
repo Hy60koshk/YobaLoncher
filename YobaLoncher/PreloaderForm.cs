@@ -17,9 +17,12 @@ namespace YobaLoncher {
 		private WebClient wc_;
 		private MainForm oldMainForm_ = null;
 		private int progressBarLeft_ = 0;
+		private string _GOGpath = null;
 		public const string IMGPATH = @"loncherData\images\";
 		public const string UPDPATH = @"loncherData\updates\";
 		public const string FNTPATH = @"loncherData\fonts\";
+		public const string SETTINGSPATH = @"loncherData\settings";
+		public const string	LOCPATH = @"loncherData\loc";
 
 		public PreloaderForm() : this(null) { }
 
@@ -43,42 +46,28 @@ namespace YobaLoncher {
 			labelAbout.Text = Locale.Get("PressF1About");
 		}
 
-		private void PreloaderForm_Load(object sender, EventArgs e) {
-
-		}
-
-		private string getSteamOrGogGameInstallPath(string steamId, string gogId) {
-			if (steamId is null && gogId is null) {
+		private string getSteamGameInstallPath() {
+			string steamId = Program.LoncherSettings.SteamID;
+			if (steamId is null) {
 				return null;
 			}
-			try {
-				using (RegistryKey view64 = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)) {
-					List<string> locations = new List<string>();
-					if (YU.stringHasText(steamId)) {
-						locations.Add(@"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Steam App " + steamId);
-						locations.Add(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App " + steamId);
-					}
-					if (YU.stringHasText(gogId)) {
-						locations.Add(@"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\" + gogId);
-						locations.Add(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" + gogId);
-					};
-					foreach (string location in locations) {
-						using (RegistryKey clsid64 = view64.OpenSubKey(location)) {
-							if (clsid64 != null) {
-								string installLoc = (string)clsid64.GetValue("InstallLocation");
-								if (installLoc != null && installLoc.Length > 1) {
-									return installLoc;
-								}
-							}
-						}
-					}
-				}
-			}
-			catch (Exception ex) {
-				YU.ErrorAndKill(ex.Message);
-			}
-			return null;
+			string[] locations = new string[] {
+				@"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Steam App " + steamId
+				, @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App " + steamId
+			};
+			return YU.GetRegistryInstallPath(locations, true);
 		}
+		private string getGogGameInstallPath() {
+			string gogId = Program.LoncherSettings.GogID;
+			if (gogId is null) {
+				return null;
+			}
+			string[] locations = new string[] {
+				@"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\" + gogId + "_is1"
+				, @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" + gogId + "_is1"
+			};
+			return YU.GetRegistryInstallPath(locations, true);
+		}		
 
 		private List<string> getSteamLibraryPaths() {
 			List<string> paths = new List<string>();
@@ -111,29 +100,33 @@ namespace YobaLoncher {
 				}
 			}
 			catch (Exception ex) {
-				YU.ErrorAndKill(ex.Message);
+				YobaDialog.ShowDialog(ex.Message);
 			}
 			return paths;
 		}
 
 		private void incProgress() {
-			progressBar1.Value++;
+			_progressBar1.Value++;
 		}
 		private void incProgress(int d) {
-			progressBar1.Value += d;
+			_progressBar1.Value += d;
 		}
 
 		private void OnDownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e) {
 			downloadProgressTracker_.SetProgress(e.BytesReceived, e.TotalBytesToReceive);
-			progressBar1.Value = e.ProgressPercentage;
+			_progressBar1.Value = e.ProgressPercentage;
 		}
 
 		private async Task loadFile(string src, string filename) {
-			progressBarLeft_ = progressBar1.Value;
+			progressBarLeft_ = _progressBar1.Value;
 			loadingLabel.Text = string.Format(Locale.Get("UpdDownloading"), filename);
 			await wc_.DownloadFileTaskAsync(src, filename);
 			downloadProgressTracker_.Reset();
-			progressBar1.Value = progressBarLeft_ + 5;
+			progressBarLeft_ += 3;
+			if (progressBarLeft_ > 87) {
+				progressBarLeft_ = 50;
+			}
+			_progressBar1.Value = progressBarLeft_;
 		}
 
 		private async Task<bool> assertFile(FileInfo fi, string dir) {
@@ -162,8 +155,12 @@ namespace YobaLoncher {
 			if (gamePathSelectForm.ShowDialog(this) == DialogResult.Yes) {
 				path = gamePathSelectForm.ThePath;
 				gamePathSelectForm.Dispose();
-				LauncherConfig.GameDir = path;
-				LauncherConfig.Save();
+				if (path != null && path.Equals(_GOGpath) && LauncherConfig.GalaxyDir != null) {
+					if (YobaDialog.ShowDialog(Locale.Get("GogGalaxyDetected"), YobaDialog.YesNoBtns) == DialogResult.Yes) {
+						LauncherConfig.LaunchFromGalaxy = true;
+						LauncherConfig.Save();
+					}
+				}
 				if (path.Length == 0) {
 					path = Program.GamePath;
 				}
@@ -173,6 +170,8 @@ namespace YobaLoncher {
 					}
 					Program.GamePath = path;
 				}
+				LauncherConfig.GameDir = path;
+				LauncherConfig.Save();
 				return path;
 			}
 			else {
@@ -181,11 +180,79 @@ namespace YobaLoncher {
 			}
 		}
 
+		private bool findGamePath() {
+			string path = LauncherConfig.GameDir;
+			if (path is null) {
+				path = getSteamGameInstallPath();
+				if (path is null && YU.stringHasText(Program.LoncherSettings.SteamGameFolder)) {
+					List<string> steampaths = getSteamLibraryPaths();
+					for (int i = 0; i < steampaths.Count; i++) {
+						string spath = steampaths[i] + Program.LoncherSettings.SteamGameFolder;
+						if (Directory.Exists(spath)) {
+							path = spath + "\\";
+							break;
+						}
+					}
+				}
+				if (path is null) {
+					path = getGogGameInstallPath();
+					if (path != null) {
+						_GOGpath = "" + path;
+					}
+				}
+				path = showPathSelection(path);
+			}
+			if (path is null || path.Length == 0) {
+				path = Program.GamePath;
+			}
+			if (path[path.Length - 1] != '\\') {
+				path += "\\";
+			}
+			while (!File.Exists(path + Program.LoncherSettings.ExeName)) {
+				YobaDialog.ShowDialog(Locale.Get("NoExeInPath"));
+				path = showPathSelection(path);
+				if (path is null) {
+					return false;
+				}
+			}
+			Program.GamePath = path;
+			YU.Log("GamePath: " + path);
+			return true;
+		}
+
+		private void updateGameVersion() {
+			string curVer = FileVersionInfo.GetVersionInfo(Program.GamePath + Program.LoncherSettings.ExeName).FileVersion.Replace(',', '.');
+			Program.LoncherSettings.LoadFileListForVersion(curVer);
+		}
+
+		private void showMainForm() {
+			_progressBar1.Value = 90;
+			MainForm mainForm = new MainForm();
+			mainForm.Icon = Program.LoncherSettings.Icon;
+			_progressBar1.Value = 99;
+			mainForm.Show(this);
+			Hide();
+		}
+
 		private void PreloaderForm_ShownAsync(object sender, EventArgs e) {
-			Initialize();
+			LauncherConfig.Load();
+			if (LauncherConfig.StartOffline) {
+				InitializeOffline();
+			}
+			else {
+				Initialize();
+			}
 		}
 		private async void Initialize() {
-			progressBar1.Value = 0;
+			_progressBar1.Value = 0;
+			Program.OfflineMode = false;
+			long startingTicks = DateTime.Now.Ticks;
+			long lastTicks = startingTicks;
+			void logDeltaTicks(string point) {
+				long current = DateTime.Now.Ticks;
+				YU.Log(point + ": " + (current - lastTicks) + " (" + (current - startingTicks) + ')');
+				lastTicks = current;
+			}
 			try {
 				if (!Directory.Exists("loncherData")) {
 					Directory.CreateDirectory("loncherData");
@@ -199,35 +266,36 @@ namespace YobaLoncher {
 				//WebBrowserHelper.FixBrowserVersion();
 				//ErrorAndKill("Cannot get Images:\r\n");
 				string settingsJson = (await wc_.DownloadStringTaskAsync(Program.SETTINGS_URL));
+				logDeltaTicks("settings");
 				incProgress(5);
 				try {
 					Program.LoncherSettings = new LauncherData(settingsJson);
 					try {
-						File.WriteAllText("loncherData\\settings", settingsJson, Encoding.UTF8);
+						File.WriteAllText(SETTINGSPATH, settingsJson, Encoding.UTF8);
 					}
 					catch { }
 					incProgress(5);
 					try {
-						string locFile = "loncherData\\loc";
 						if (Program.LoncherSettings.RAW.Localization != null) {
 							FileInfo locInfo = Program.LoncherSettings.RAW.Localization;
 							if (YU.stringHasText(locInfo.Url)) {
-								locInfo.Path = locFile;
+								locInfo.Path = LOCPATH;
 								if (!FileChecker.CheckFileMD5("", locInfo)) {
 									string loc = await wc_.DownloadStringTaskAsync(locInfo.Url);
-									File.WriteAllText(locFile, loc, Encoding.UTF8);
+									File.WriteAllText(LOCPATH, loc, Encoding.UTF8);
 									Locale.LoadCustomLoc(loc.Replace("\r\n", "\n").Split('\n'));
 								}
-								Locale.LoadCustomLoc(File.ReadAllLines(locFile, Encoding.UTF8));
+								Locale.LoadCustomLoc(File.ReadAllLines(LOCPATH, Encoding.UTF8));
 							}
-							else if (File.Exists(locFile)) {
-								Locale.LoadCustomLoc(File.ReadAllLines(locFile, Encoding.UTF8));
+							else if (File.Exists(LOCPATH)) {
+								Locale.LoadCustomLoc(File.ReadAllLines(LOCPATH, Encoding.UTF8));
 							}
 						}
-						else if (File.Exists(locFile)) {
-							Locale.LoadCustomLoc(File.ReadAllLines(locFile, Encoding.UTF8));
+						else if (File.Exists(LOCPATH)) {
+							Locale.LoadCustomLoc(File.ReadAllLines(LOCPATH, Encoding.UTF8));
 						}
 						incProgress(5);
+						logDeltaTicks("locales");
 					}
 					catch (Exception ex) {
 						YobaDialog.ShowDialog(Locale.Get("CannotGetLocaleFile") + ":\r\n" + ex.Message);
@@ -243,7 +311,7 @@ namespace YobaLoncher {
 								string newLoncherPath = Application.ExecutablePath + ".new";
 								string appname = Application.ExecutablePath;
 								appname = appname.Substring(appname.LastIndexOf('\\') + 1);
-								progressBarLeft_ = progressBar1.Value;
+								progressBarLeft_ = _progressBar1.Value;
 								await wc_.DownloadFileTaskAsync(Program.LoncherSettings.LoncherExe, newLoncherPath);
 								downloadProgressTracker_.Reset();
 								if (FileChecker.CheckFileMD5(newLoncherPath, Program.LoncherSettings.LoncherHash)) {
@@ -304,6 +372,7 @@ namespace YobaLoncher {
 								}
 							}
 						}
+						logDeltaTicks("images");
 					}
 					catch (Exception ex) {
 						YU.ErrorAndKill(Locale.Get("CannotGetImages") + ":\r\n" + ex.Message);
@@ -338,6 +407,7 @@ namespace YobaLoncher {
 										}
 									}
 								}
+								logDeltaTicks("fonts");
 							}
 							catch (Exception ex) {
 								YU.ErrorAndKill(Locale.Get("CannotGetFonts") + ":\r\n" + ex.Message);
@@ -348,94 +418,38 @@ namespace YobaLoncher {
 					try {
 						await Program.LoncherSettings.InitChangelog();
 						incProgress(5);
+						logDeltaTicks("changelog");
 						try {
-							string path = "";
-							LauncherConfig.Load();
-							if (LauncherConfig.GameDir != null) {
-								path = LauncherConfig.GameDir;
-							}
-							else {
-								path = getSteamOrGogGameInstallPath(Program.LoncherSettings.SteamID, Program.LoncherSettings.GogID);
-								if (path is null && YU.stringHasText(Program.LoncherSettings.SteamGameFolder)) {
-									List<string> steampaths = getSteamLibraryPaths();
-									for (int i = 0; i < steampaths.Count; i++) {
-										string spath = steampaths[i] + Program.LoncherSettings.SteamGameFolder;
-										if (Directory.Exists(spath)) {
-											path = spath + "\\";
-											break;
-										}
+							if (findGamePath()) {
+								try {
+									updateGameVersion();
+									if (oldMainForm_ != null) {
+										oldMainForm_.Dispose();
 									}
-								}
-								path = showPathSelection(path);
-								if (path is null) {
-									return;
-								}
-							}
-							incProgress(5);
-							if (path is null || path.Length == 0) {
-								path = Program.GamePath;
-							}
-							else {
-								if (path[path.Length - 1] != '\\') {
-									path += "\\";
-								}
-								Program.GamePath = path;
-							}
-							try {
-								while (!File.Exists(path + Program.LoncherSettings.ExeName)) {
-									YobaDialog.ShowDialog(Locale.Get("NoExeInPath"));
-									path = showPathSelection(path);
-									if (path is null) {
-										return;
+									int progressBarPerFile = 94 - _progressBar1.Value;
+									if (progressBarPerFile < Program.LoncherSettings.Files.Count) {
+										progressBarPerFile = 88;
+										_progressBar1.Value = 6;
 									}
-								}
-								if (Program.LoncherSettings.GameVersions != null && Program.LoncherSettings.GameVersions.Count > 0) {
-									string curVer = FileVersionInfo.GetVersionInfo(path + Program.LoncherSettings.ExeName).FileVersion.Replace(',', '.');
-									bool gotVer = false;
-									foreach (GameVersion gv in Program.LoncherSettings.GameVersions) {
-										if (!YU.stringHasText(gv.ExeVersion) || gv.ExeVersion.Equals(curVer)) {
-											gotVer = true;
-											if (gv.Files != null && gv.Files.Count > 0) {
-												Program.LoncherSettings.Files.AddRange(gv.Files);
+									progressBarPerFile = progressBarPerFile / Program.LoncherSettings.Files.Count;
+									if (progressBarPerFile < 1) {
+										progressBarPerFile = 1;
+									}
+									Program.GameFileCheckResult = await FileChecker.CheckFiles(
+										Program.LoncherSettings.Files
+										, new EventHandler<FileCheckedEventArgs>((object o, FileCheckedEventArgs a) => {
+											_progressBar1.Value += progressBarPerFile;
+											if (_progressBar1.Value > 96) {
+												_progressBar1.Value = 40;
 											}
-											break;
-										}
-									}
-									if (!gotVer) {
-										YU.ErrorAndKill(string.Format(Locale.Get("OldGameVersion"), curVer));
-										return;
-									}
+										})
+									);
+									logDeltaTicks("filecheck");
+									showMainForm();
 								}
-								if (oldMainForm_ != null) {
-									oldMainForm_.Dispose();
+								catch (Exception ex) {
+									YU.ErrorAndKill(Locale.Get("CannotCheckFiles") + ":\r\n" + ex.Message);
 								}
-								int progressBarPerFile = 94 - progressBar1.Value;
-								if (progressBarPerFile < Program.LoncherSettings.Files.Count) {
-									progressBarPerFile = 88;
-									progressBar1.Value = 6;
-								}
-								progressBarPerFile = progressBarPerFile / Program.LoncherSettings.Files.Count;
-								if (progressBarPerFile < 1) {
-									progressBarPerFile = 1;
-								}
-								Program.GameFileCheckResult = await FileChecker.CheckFiles(
-									Program.LoncherSettings.Files
-									, new EventHandler<FileCheckedEventArgs>((object o, FileCheckedEventArgs a) => {
-										progressBar1.Value += progressBarPerFile;
-										if (progressBar1.Value > 96) {
-											progressBar1.Value = 40;
-										}
-									})
-								);
-								progressBar1.Value = 90;
-								MainForm mainForm = new MainForm();
-								mainForm.Icon = Program.LoncherSettings.Icon;
-								progressBar1.Value = 99;
-								mainForm.Show(this);
-								Hide();
-							}
-							catch (Exception ex) {
-								YU.ErrorAndKill(Locale.Get("CannotCheckFiles") + ":\r\n" + ex.Message);
 							}
 						}
 						catch (Exception ex) {
@@ -459,7 +473,7 @@ namespace YobaLoncher {
 				btnRetry.Caption = Locale.Get("Retry");
 				btnRetry.Result = DialogResult.Retry;
 				string msg;
-				if (File.Exists("settings")) {
+				if (File.Exists(SETTINGSPATH)) {
 					msg = Locale.Get("WebClientErrorOffline");
 					UIElement btnOffline = new UIElement();
 					btnOffline.Caption = Locale.Get("RunOffline");
@@ -491,15 +505,14 @@ namespace YobaLoncher {
 		private void InitializeOffline() {
 			try {
 				Program.OfflineMode = true;
-				string settingsJson = File.ReadAllText("settings");
+				string settingsJson = File.ReadAllText(SETTINGSPATH);
 				Program.LoncherSettings = new LauncherData(settingsJson);
 				incProgress(10);
 				try {
 					LauncherData.LauncherDataRaw raw = Program.LoncherSettings.RAW;
 					try {
-						string locFile = "loncherData\\loc";
-						if (File.Exists(locFile)) {
-							Locale.LoadCustomLoc(File.ReadAllLines(locFile, Encoding.UTF8));
+						if (File.Exists(LOCPATH)) {
+							Locale.LoadCustomLoc(File.ReadAllLines(LOCPATH, Encoding.UTF8));
 						}
 					}
 					catch (Exception ex) {
@@ -569,72 +582,16 @@ namespace YobaLoncher {
 				}
 				try {
 					try {
-						string path = "";
-						LauncherConfig.Load();
-						if (LauncherConfig.GameDir != null) {
-							path = LauncherConfig.GameDir;
-						}
-						else {
-							path = getSteamOrGogGameInstallPath(Program.LoncherSettings.SteamID, Program.LoncherSettings.GogID);
-							if (path is null && YU.stringHasText(Program.LoncherSettings.SteamGameFolder)) {
-								List<string> steampaths = getSteamLibraryPaths();
-								for (int i = 0; i < steampaths.Count; i++) {
-									string spath = steampaths[i] + Program.LoncherSettings.SteamGameFolder;
-									if (Directory.Exists(spath)) {
-										path = spath + "\\";
-										break;
-									}
-								}
+						if (findGamePath()) {
+							try {
+								updateGameVersion();
+								incProgress(10);
+								Program.GameFileCheckResult = FileChecker.CheckFilesOffline(Program.LoncherSettings.Files);
+								showMainForm();
 							}
-							incProgress(5);
-							path = showPathSelection(path);
-						}
-						try {
-							if (path is null || path.Length == 0) {
-								path = Program.GamePath;
+							catch (Exception ex) {
+								YU.ErrorAndKill(Locale.Get("CannotCheckFiles") + ":\r\n" + ex.Message);
 							}
-							else {
-								if (path[path.Length - 1] != '\\') {
-									path += "\\";
-								}
-								Program.GamePath = path;
-							}
-							if (!File.Exists(path + Program.LoncherSettings.ExeName)) {
-								YobaDialog.ShowDialog(Locale.Get("NoExeInPath"));
-								path = showPathSelection(path);
-								if (path is null) {
-									return;
-								}
-							}
-							if (Program.LoncherSettings.GameVersions != null && Program.LoncherSettings.GameVersions.Count > 0) {
-								string curVer = FileVersionInfo.GetVersionInfo(path + Program.LoncherSettings.ExeName).FileVersion.Replace(',', '.');
-								bool gotVer = false;
-								foreach (GameVersion gv in Program.LoncherSettings.GameVersions) {
-									if (!YU.stringHasText(gv.ExeVersion) || gv.ExeVersion.Equals(curVer)) {
-										gotVer = true;
-										if (gv.Files != null && gv.Files.Count > 0) {
-											Program.LoncherSettings.Files.AddRange(gv.Files);
-										}
-										break;
-									}
-								}
-								if (!gotVer) {
-									YU.ErrorAndKill(string.Format(Locale.Get("OldGameVersion"), curVer));
-									return;
-								}
-							}
-							incProgress(10);
-							Program.GameFileCheckResult = FileChecker.CheckFilesOffline(Program.LoncherSettings.Files);
-							progressBar1.Value = 90;
-							MainForm mainForm = new MainForm();
-							mainForm.Icon = Program.LoncherSettings.Icon;
-							mainForm.ThePath = path;
-							progressBar1.Value = 99;
-							mainForm.Show(this);
-							Hide();
-						}
-						catch (Exception ex) {
-							YU.ErrorAndKill(Locale.Get("CannotCheckFiles") + ":\r\n" + ex.Message);
 						}
 					}
 					catch (Exception ex) {

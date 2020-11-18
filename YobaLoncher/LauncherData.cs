@@ -17,6 +17,9 @@ namespace YobaLoncher {
 
 	static class LauncherConfig {
 		public static string GameDir = null;
+		public static string GalaxyDir = null;
+		public static bool LaunchFromGalaxy = false;
+		public static bool StartOffline = false;
 		public static StartPageEnum StartPage = StartPageEnum.Status;
 		private const string CFGFILE = @"loncherData\loncher.cfg";
 
@@ -25,6 +28,8 @@ namespace YobaLoncher {
 				File.WriteAllLines(CFGFILE, new string[] {
 					"path = " + GameDir
 					, "startpage = " + (int)StartPage
+					, "startviagalaxy = " + (LaunchFromGalaxy ? 1 : 0)
+					, "offlinemode = " + (StartOffline ? 1 : 0)
 				});
 			}
 			catch (Exception ex) {
@@ -33,6 +38,7 @@ namespace YobaLoncher {
 		}
 
 		public static void Load() {
+			GalaxyDir = YU.GetGogGalaxyPath();
 			try {
 				if (File.Exists(CFGFILE)) {
 					string[] lines = File.ReadAllLines(CFGFILE);
@@ -52,6 +58,24 @@ namespace YobaLoncher {
 									}
 								}
 							}
+							else if (line.StartsWith("startviagalaxy")) {
+								if (GalaxyDir != null) {
+									string[] vals = line.Split('=');
+									if (vals.Length > 1) {
+										string val = vals[1].Trim();
+										LaunchFromGalaxy = !"0".Equals(val) && val.Length != 5;
+									}
+								}
+							}
+							else if (line.StartsWith("offlinemode")) {
+								if (GalaxyDir != null) {
+									string[] vals = line.Split('=');
+									if (vals.Length > 1) {
+										string val = vals[1].Trim();
+										StartOffline = !"0".Equals(val) && val.Length != 5;
+									}
+								}
+							}
 						}
 					}
 				}
@@ -65,8 +89,9 @@ namespace YobaLoncher {
 	class LauncherData {
 #pragma warning disable 649
 
-		public List<GameVersion> GameVersions;
-		public List<FileInfo> Files;
+		public Dictionary<string, GameVersion> GameVersions = new Dictionary<string, GameVersion>();
+		public GameVersion GameVersion = null;
+		public List<FileInfo> Files = new List<FileInfo>();
 		public List<LinkButton> Buttons;
 		public Dictionary<string, UIElement> UI;
 		public string GameName;
@@ -93,7 +118,6 @@ namespace YobaLoncher {
 			public string GameName;
 			public string SteamGameFolder;
 			public List<GameVersion> GameVersions;
-			public List<FileInfo> Files;
 			public FileInfo Background;
 			public FileInfo PreloaderBackground;
 			public FileInfo Localization;
@@ -120,7 +144,7 @@ namespace YobaLoncher {
 			wc_ = new WebClient();
 			wc_.Encoding = System.Text.Encoding.UTF8;
 
-			Files = raw.Files ?? new List<FileInfo>();
+			//Files = raw.Files ?? new List<FileInfo>();
 			Buttons = raw.Buttons ?? new List<LinkButton>();
 			foreach (LinkButton btn in Buttons) {
 				if (btn.Position == null)
@@ -128,7 +152,7 @@ namespace YobaLoncher {
 				if (btn.Size == null)
 					btn.Size = new Vector();
 			}
-			GameVersions = raw.GameVersions;
+			//GameVersions = raw.GameVersions;
 
 			StartPage = raw.StartPage;
 			UI = raw.UI ?? new Dictionary<string, UIElement>();
@@ -143,6 +167,80 @@ namespace YobaLoncher {
 
 			GameName = raw.GameName;
 			SteamGameFolder = raw.SteamGameFolder;
+
+			foreach (GameVersion gv in raw.GameVersions) {
+				string key = YU.stringHasText(gv.ExeVersion) ? gv.ExeVersion : "DEFAULT";
+				if (GameVersions.ContainsKey(key)) {
+					throw new Exception(string.Format(Locale.Get("MultipleFileBlocksForSingleGameVersion"), key));
+				}
+				GameVersions.Add(key, gv);
+			}
+			List<string> gvkeys = GameVersions.Keys.ToList();
+			string[] anyKeys = new string[] { "ANY", "=", "DEFAULT" };
+			gvkeys.RemoveAll(s => anyKeys.Contains(s));
+
+			if (gvkeys.Count == 0) {
+				GameVersions.Add("DEFAULT", new GameVersion());
+				GameVersion singleGV = GameVersions["DEFAULT"];
+				foreach (string anyKey in anyKeys) {
+					if (GameVersions.ContainsKey(anyKey)) {
+						GameVersion versionToMerge = GameVersions[anyKey];
+						singleGV.FileGroups.AddRange(versionToMerge.FileGroups);
+						singleGV.Files.AddRange(versionToMerge.Files);
+						GameVersions.Remove(anyKey);
+					}
+				}
+			} else {
+				foreach (string anyKey in anyKeys) {
+					if (GameVersions.ContainsKey(anyKey)) {
+						GameVersion versionToMerge = GameVersions[anyKey];
+						foreach (string gvkey in gvkeys) {
+							GameVersion targetVersion = GameVersions[gvkey];
+							foreach (FileGroup fg in versionToMerge.FileGroups) {
+								FileGroup targetGroup = targetVersion.FileGroups.Find(x => x.Name == fg.Name);
+								if (targetGroup is null) {
+									targetGroup = FileGroup.CopyOf(fg);
+									targetVersion.FileGroups.Add(targetGroup);
+								}
+								else {
+									targetGroup.Files.AddRange(fg.Files);
+								}
+							}
+							targetVersion.Files.AddRange(versionToMerge.Files);
+						}
+						GameVersions.Remove(anyKey);
+					}
+				}
+			}
+			foreach (string gvkey in gvkeys) {
+				GameVersion gv = GameVersions[gvkey];
+				gv.FileGroups.Sort();
+			}
+		}
+
+		public void LoadFileListForVersion(string curVer) {
+			if (YU.stringHasText(curVer)) {
+				if (GameVersions.ContainsKey(curVer)) {
+					GameVersion = GameVersions[curVer];
+				}
+			}
+			if (GameVersions.ContainsKey("DEFAULT")) {
+				GameVersion = GameVersions["DEFAULT"];
+			}
+			if (GameVersions.ContainsKey("OTHER")) {
+				GameVersion = GameVersions["OTHER"];
+			}
+			if (GameVersion is null) {
+				throw new Exception(string.Format(Locale.Get("OldGameVersion"), curVer));
+			}
+			foreach (FileGroup fileGroup in GameVersion.FileGroups) {
+				if (fileGroup.Files != null) {
+					Files.AddRange(fileGroup.Files);
+				}
+			}
+			if (GameVersion.Files != null) {
+				Files.AddRange(GameVersion.Files);
+			}
 		}
 
 		public async Task InitChangelog() {
@@ -175,7 +273,26 @@ namespace YobaLoncher {
 	}
 	class GameVersion {
 		public string ExeVersion = null;
-		public List<FileInfo> Files;
+		public List<FileInfo> Files = new List<FileInfo>();
+		public List<FileGroup> FileGroups = new List<FileGroup>();
+	}
+	class FileGroup : IComparable<FileGroup> {
+		public string Name = null;
+		public List<FileInfo> Files = new List<FileInfo>();
+		public int OrderIndex = 1;
+
+		public int CompareTo(FileGroup fg) {
+			return OrderIndex.CompareTo(fg.OrderIndex);
+		}
+
+		public static FileGroup CopyOf(FileGroup fg) {
+			FileGroup targetGroup = new FileGroup() {
+				Name = fg.Name,
+				OrderIndex = fg.OrderIndex
+			};
+			targetGroup.Files.AddRange(fg.Files);
+			return targetGroup;
+		}
 	}
 	class UIElement {
 		public string Color;
@@ -204,6 +321,8 @@ namespace YobaLoncher {
 		public bool IsOK = false;
 		public string UploadAlias;
 		public uint Size;
+		public int Importance = 0;
+		public bool CheckedToDl = true;
 
 		public bool IsComplete {
 			get {

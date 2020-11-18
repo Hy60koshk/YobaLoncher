@@ -26,12 +26,10 @@
 			this.textBox1 = new System.Windows.Forms.TextBox();
 			this.button1 = new YobaLoncher.YobaButton();
 			this.button2 = new YobaLoncher.YobaButton();
-			this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
 			this.closeButton = new YobaLoncher.YobaCloseButton();
 			this.label1 = new System.Windows.Forms.Label();
 			this.panel1 = new System.Windows.Forms.Panel();
 			this.draggingPanel = new System.Windows.Forms.Panel();
-			this.richTextBox1 = new System.Windows.Forms.RichTextBox();
 			this.panel1.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -125,26 +123,12 @@
 			this.draggingPanel.TabIndex = 300;
 			this.draggingPanel.MouseDown += new System.Windows.Forms.MouseEventHandler(this.draggingPanel_MouseDown);
 			// 
-			// richTextBox1
-			// 
-			this.richTextBox1.BackColor = System.Drawing.Color.DimGray;
-			this.richTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
-			this.richTextBox1.Font = new System.Drawing.Font("Verdana", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
-			this.richTextBox1.ForeColor = System.Drawing.Color.White;
-			this.richTextBox1.Location = new System.Drawing.Point(361, 103);
-			this.richTextBox1.Name = "richTextBox1";
-			this.richTextBox1.ReadOnly = true;
-			this.richTextBox1.Size = new System.Drawing.Size(166, 55);
-			this.richTextBox1.TabIndex = 301;
-			this.richTextBox1.Text = "";
-			// 
 			// GamePathSelectForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(62)))), ((int)(((byte)(63)))), ((int)(((byte)(64)))));
 			this.ClientSize = new System.Drawing.Size(560, 170);
-			this.Controls.Add(this.richTextBox1);
 			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.closeButton);
@@ -173,11 +157,9 @@
 		private System.Windows.Forms.TextBox textBox1;
 		private YobaButton button1;
 		private YobaButton button2;
-		private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
 		private YobaCloseButton closeButton;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Panel panel1;
 		private System.Windows.Forms.Panel draggingPanel;
-		private System.Windows.Forms.RichTextBox richTextBox1;
 	}
 }

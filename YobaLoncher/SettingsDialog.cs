@@ -5,16 +5,22 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace YobaLoncher {
 	class SettingsDialog : YobaDialog {
 		private TextBox gamePath;
 		private FolderBrowserDialog folderBrowserDialog1;
 		private YobaComboBox openingPanelCB;
+		private CheckBox launchViaGalaxy;
+		private CheckBox offlineMode;
 		//private YobaButton openingPanelCB;
 
 		public string GamePath => gamePath.Text;
 		public StartPageEnum OpeningPanel => (StartPageEnum)openingPanelCB.SelectedIndex;
+		public bool LaunchViaGalaxy => launchViaGalaxy.Checked;
+		public bool OfflineMode => offlineMode.Checked;
+		private CommonOpenFileDialog folderBrowserDialog;
 
 		public SettingsDialog() : base(new Size(480, 280), new UIElement[] {
 			new UIElement() {
@@ -32,11 +38,20 @@ namespace YobaLoncher {
 
 			folderBrowserDialog1 = new FolderBrowserDialog();
 
+			folderBrowserDialog = new CommonOpenFileDialog() {
+				IsFolderPicker = true
+			};
+
+			ToolTip theToolTip = new ToolTip();
+			theToolTip.AutoPopDelay = 10000;
+			theToolTip.InitialDelay = 200;
+			theToolTip.ReshowDelay = 100;
+
 			Label gamePathLabel = new Label();
 			gamePathLabel.Text = Locale.Get("SettingsGamePath");
 			gamePathLabel.Font = new Font("Tahoma", 12F, FontStyle.Regular, GraphicsUnit.Pixel, 204);
-			gamePathLabel.Location = new Point(18, 32);
-			gamePathLabel.AutoSize = true;
+			gamePathLabel.Location = new Point(18, 22);
+			gamePathLabel.Size = new Size(444, 40);
 
 			gamePath = new TextBox();
 			gamePath.Text = Program.GamePath;
@@ -49,7 +64,7 @@ namespace YobaLoncher {
 			YU.assertLucida(gamePath);
 
 			YobaButton browseButton = new YobaButton();
-			browseButton.Location = new Point(385, 54);
+			browseButton.Location = new Point(385, 44);
 			browseButton.Name = "browseButton";
 			browseButton.Size = new Size(75, 27);
 			browseButton.Text = Locale.Get("Browse");
@@ -57,21 +72,40 @@ namespace YobaLoncher {
 			browseButton.Click += new System.EventHandler(browseButton_Click);
 
 			Panel fieldBackground = new Panel();
-			fieldBackground.BackColor = Color.FromArgb(40, 40, 41);
+			fieldBackground.BackColor = Color.FromArgb(32, 33, 34);
 			fieldBackground.BorderStyle = BorderStyle.FixedSingle;
 			fieldBackground.Controls.Add(gamePath);
-			fieldBackground.Location = new Point(20, 54);
+			fieldBackground.Location = new Point(20, 44);
 			fieldBackground.Name = "fieldBackground";
 			fieldBackground.Size = new Size(361, 27);
+
+			launchViaGalaxy = new CheckBox();
+			launchViaGalaxy.Text = Locale.Get("SettingsGogGalaxy");
+			launchViaGalaxy.Font = new Font("Tahoma", 12F, FontStyle.Regular, GraphicsUnit.Pixel, 204);
+			launchViaGalaxy.Location = new Point(20, 86);
+			launchViaGalaxy.Size = new Size(440, 24);
+			launchViaGalaxy.Checked = LauncherConfig.LaunchFromGalaxy;
+			launchViaGalaxy.BackColor = Color.Transparent;
+			launchViaGalaxy.Enabled = LauncherConfig.GalaxyDir != null;
+			
+			offlineMode = new CheckBox();
+			offlineMode.Text = Locale.Get("SettingsOfflineMode");
+			offlineMode.Font = new Font("Tahoma", 12F, FontStyle.Regular, GraphicsUnit.Pixel, 204);
+			offlineMode.Location = new Point(20, 119);
+			offlineMode.Size = new Size(440, 24);
+			offlineMode.Checked = LauncherConfig.StartOffline;
+			offlineMode.BackColor = Color.Transparent;
+
+			theToolTip.SetToolTip(offlineMode, Locale.Get("SettingsOfflineModeTooltip"));
 
 			Label openingPanelLabel = new Label();
 			openingPanelLabel.Text = Locale.Get("SettingsOpeningPanel");
 			openingPanelLabel.Font = new Font("Tahoma", 12F, FontStyle.Regular, GraphicsUnit.Pixel, 204);
-			openingPanelLabel.Location = new Point(18, 120);
-			openingPanelLabel.AutoSize = true;
+			openingPanelLabel.Location = new Point(18, 154);
+			openingPanelLabel.Size = new Size(444, 40);
 
 			openingPanelCB = new YobaComboBox();
-			openingPanelCB.Location = new Point(20, 141);
+			openingPanelCB.Location = new Point(20, 175);
 			openingPanelCB.Name = "openingPanel";
 			openingPanelCB.Size = new Size(440, 22);
 			openingPanelCB.DataSource = new string[] {
@@ -99,13 +133,18 @@ namespace YobaLoncher {
 
 			gamePath.TabIndex = 1;
 			browseButton.TabIndex = 2;
-			openingPanelCB.TabIndex = 3;
-
-			Controls.Add(gamePathLabel);
+			launchViaGalaxy.TabIndex = 3;
+			offlineMode.TabIndex = 3;
+			openingPanelCB.TabIndex = 4;
+			
 			Controls.Add(fieldBackground);
 			Controls.Add(browseButton);
-			Controls.Add(openingPanelLabel);
+			Controls.Add(launchViaGalaxy);
+			Controls.Add(offlineMode);
 			Controls.Add(openingPanelCB);
+
+			Controls.Add(openingPanelLabel);
+			Controls.Add(gamePathLabel);
 
 			Load += new EventHandler((object o, EventArgs a) => {
 				openingPanelCB.SelectedIndex = (int)LauncherConfig.StartPage;
@@ -114,9 +153,9 @@ namespace YobaLoncher {
 		}
 
 		private void browseButton_Click(object sender, EventArgs e) {
-			folderBrowserDialog1.SelectedPath = gamePath.Text;
-			if (folderBrowserDialog1.ShowDialog() == DialogResult.OK) {
-				gamePath.Text = folderBrowserDialog1.SelectedPath;
+			folderBrowserDialog.InitialDirectory = gamePath.Text;
+			if (folderBrowserDialog.ShowDialog() == CommonFileDialogResult.Ok) {
+				gamePath.Text = folderBrowserDialog.FileName;
 			}
 		}
 

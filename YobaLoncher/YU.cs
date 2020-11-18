@@ -3,18 +3,26 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Text;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace YobaLoncher {
 	static class YU {
 
 		public static bool stringHasText(string s) {
 			return s != null && s.Length > 0;
+		}
+
+		public static void Log(string text) {
+#if DEBUG
+			File.AppendAllText(Program.LoncherDataPath + "log.txt", text + "\r\n");
+#endif
 		}
 
 		public static void setFont(Control comp, string fontName, string fontSize) {
@@ -76,6 +84,49 @@ namespace YobaLoncher {
 			catch {
 				return def;
 			}
+		}
+
+		public static string GetRegistryInstallPath(string[] paths, bool lethal) {
+			try {
+				using (RegistryKey view64 = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)) {
+					foreach (string location in paths) {
+						using (RegistryKey clsid64 = view64.OpenSubKey(location)) {
+							if (clsid64 != null) {
+								string installLoc = (string)clsid64.GetValue("InstallLocation");
+								if (installLoc != null && installLoc.Length > 1) {
+									return installLoc;
+								}
+							}
+						}
+					}
+				}
+			}
+			catch (Exception ex) {
+				if (lethal) {
+					ErrorAndKill(ex.Message);
+				}
+			}
+			return null;
+		}
+		public static string GetGogGalaxyPath() {
+			try {
+				using (RegistryKey view64 = RegistryKey.OpenBaseKey(RegistryHive.ClassesRoot, RegistryView.Registry64)) {
+					using (RegistryKey clsid64 = view64.OpenSubKey(@"goggalaxy\shell\open\command")) {
+						if (clsid64 != null) {
+							string installLoc = (string)clsid64.GetValue("");
+							if (installLoc != null && installLoc.Length > 1) {
+								installLoc = installLoc.Substring(1, installLoc.IndexOf('"', 2) - 1);
+								if (installLoc.Length > 0) {
+									YU.Log("GalaxyInstalloc: " + installLoc);
+									return installLoc;
+								}
+							}
+						}
+					}
+				}
+			}
+			catch { }
+			return null;
 		}
 
 		public static void ErrorAndKill(string msg) {

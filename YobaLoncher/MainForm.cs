@@ -8,27 +8,72 @@ using System.Drawing.Text;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
+using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace YobaLoncher {
+	[ComVisible(true)]
 	public partial class MainForm : Form {
 		public const int WM_NCLBUTTONDOWN = 0xA1;
 		public const int HT_CAPTION = 0x2;
-		[System.Runtime.InteropServices.DllImport("user32.dll")]
+		[DllImport("user32.dll")]
 		public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
-		[System.Runtime.InteropServices.DllImport("user32.dll")]
+		[DllImport("user32.dll")]
 		public static extern bool ReleaseCapture();
 
 		private DownloadProgressTracker downloadProgressTracker_;
 		public string ThePath = "";
 		private LinkedList<FileInfo> filesToUpload_;
-		private Dictionary<FileInfo, Label> fileIndicators_ = new Dictionary<FileInfo, Label>();
 		private LinkedListNode<FileInfo> currentFile_ = null;
 		private bool ReadyToGo_ = false;
 
 		private long lastDlstringUpdate_ = -1;
+
+		[PermissionSet(SecurityAction.Demand, Name = "FullTrust")]
+		[ComVisible(true)]
+		public class StatusController {
+			public class SFileInfo {
+				public string Title;
+				public bool IsOk = false;
+
+				public SFileInfo(string title, bool isok) {
+					Title = title;
+					IsOk = isok;
+				}
+			}
+
+			//public SFileInfo[] Files;
+			private static StatusController _instance = null;
+			internal Dictionary<string, FileInfo> FileMap;
+
+			public void UncheckFile(string id) {
+				FileInfo fi = FileMap[id];
+				if (fi.Importance > 1) {
+					fi.CheckedToDl = false;
+				}
+			}
+			public void CheckFile(string id) {
+				FileMap[id].CheckedToDl = true;
+			}
+
+			public static StatusController Instance {
+				get {
+					if (_instance is null) {
+						_instance = new StatusController();
+						//_instance.Files = new SFileInfo[Program.LoncherSettings.Files.Count];
+
+						/*for (int i = 0; i < _instance.Files.Length; i++) {
+							FileInfo fi = Program.LoncherSettings.Files[i];
+							_instance.Files[i] = new SFileInfo(fi.Description ?? fi.Path, fi.IsOK);
+						}*/
+					}
+					return _instance;
+				}
+			}
+		}
 
 		public MainForm() {
 			ThePath = Program.GamePath;
@@ -75,9 +120,11 @@ namespace YobaLoncher {
 			statusPanel.Size = new Size(610, 330);
 
 			if (Program.OfflineMode) {
-				Controls.Remove(changelogBrowser);
-			} 
+				changelogPanel.Controls.Remove(changelogBrowser);
+				loncherIsOfflineLable.Text = Locale.Get("LauncherIsInOfflineMode");
+			}
 			else {
+				changelogPanel.Controls.Remove(loncherIsOfflineLable);
 				changelogBrowser.Location = new Point(0, 0);
 				changelogBrowser.Size = new Size(610, 330);
 				if (Program.LoncherSettings.ChangelogSite.Length > 0) {
@@ -88,6 +135,38 @@ namespace YobaLoncher {
 				}
 			}
 
+			statusBowser.Size = new Size(610, 330);
+			statusBowser.Location = new Point(0, 0);
+
+			statusBowser.ObjectForScripting = StatusController.Instance;
+
+			StringBuilder statusSb = new StringBuilder();
+			GameVersion gameVersion = Program.LoncherSettings.GameVersion;
+
+			int finum = 0;
+			StatusController.Instance.FileMap = new Dictionary<string, FileInfo>();
+
+			void appendFiles(StringBuilder sb, List<FileInfo> files) {
+				foreach (FileInfo fi in files) {
+					string id = "fileNumber" + finum++;
+					StatusController.Instance.FileMap[id] = fi;
+
+					sb.Append("<label><input type='checkbox' checked class='")
+						.Append(fi.IsOK ? "exists" : (fi.Importance > 1 ? "optional" : "forced"))
+						.Append("' id='").Append(id).Append("'></input><span> ")
+						.Append(fi.Description ?? fi.Path).Append("</span></label>");
+				}
+			}
+
+			foreach (FileGroup fg in gameVersion.FileGroups) {
+				statusSb.Append("<div class='group-spoiler-button'><span class='spoilersym'>- </span>").Append(fg.Name).Append("</div><div class='group-spoiler'>");
+				appendFiles(statusSb, fg.Files);
+				statusSb.Append("</div><div class='spoilerdash'></div>");
+			}
+			appendFiles(statusSb, gameVersion.Files);
+			statusBowser.DocumentText = Resource1.status_template.Replace("[[[STATUS]]]", statusSb.ToString());//Program.LoncherSettings.ChangelogHtml;//"data:text/html;charset=UTF-8," + 
+
+
 			if (Program.LoncherSettings.UI.ContainsKey("UpdateLabel")) {
 				UIElement updateLabelInfo = Program.LoncherSettings.UI["UpdateLabel"];
 				if (updateLabelInfo != null) {
@@ -97,7 +176,7 @@ namespace YobaLoncher {
 				}
 			}
 			string[] menuScreenKeys = new string[] {
-				"BasePanel", "StatusPanel", "LinksPanel", "ModsPanel", "ChangelogPanel"
+				"BasePanel", "StatusPanel", "LinksPanel", "ModsPanel", "ChangelogPanel"//
 			};
 			string[] menuBtnKeys = new string[] {
 				"LaunchButton", "SettingsButton", "StatusButton", "LinksButton", "ChangelogButton", "ModsButton", "CloseButton", "MinimizeButton"
@@ -191,34 +270,6 @@ namespace YobaLoncher {
 					break;
 			}
 
-			for (int i = 0; i < Program.LoncherSettings.Files.Count; i++) {
-				FileInfo fileInfo = Program.LoncherSettings.Files[i];
-				Label indicator = new Label();
-				Label fileDesc = new Label();
-				indicator.Text = "";
-				fileDesc.Text = fileInfo.Description ?? fileInfo.Path;
-				fileDesc.Font = new Font("Tahoma", 11F, FontStyle.Regular, GraphicsUnit.Pixel, 204);
-				fileDesc.ForeColor = Color.White;
-				fileDesc.AutoSize = true;
-				fileDesc.BackColor = Color.Transparent;
-				indicator.BackColor = Color.Transparent;
-				indicator.Size = new Size(9, 9);
-				indicator.Image = fileInfo.IsOK ? Resource1.green_dot : Resource1.red_dot;
-				indicator.Location = new Point(20, 18 + 22 * i);
-				fileDesc.Location = new Point(34, 15 + 22 * i);
-
-				fileIndicators_.Add(fileInfo, indicator);
-
-				statusPanel.Controls.Add(indicator);
-				statusPanel.Controls.Add(fileDesc);
-			}
-			Label padder = new Label();
-			padder.Text = "";
-			padder.Size = new Size(9, 1);
-			padder.BackColor = Color.Transparent;
-			padder.Location = new Point(30, 20 + 22 * Program.LoncherSettings.Files.Count);
-			statusPanel.Controls.Add(padder);
-
 			PerformLayout();
 		}
 
@@ -273,7 +324,7 @@ namespace YobaLoncher {
 		}
 
 		private void DownloadNext() {
-			fileIndicators_[currentFile_.Value].Image = Resource1.yellow_dot;
+			//fileIndicators_[currentFile_.Value].Image = Resource1.yellow_dot;
 			currentFile_ = currentFile_.Next;
 			if (currentFile_ == null) {
 				string filename = "";
@@ -295,7 +346,7 @@ namespace YobaLoncher {
 							File.Delete(ThePath + fileInfo.Path);
 						}
 						File.Move(PreloaderForm.UPDPATH + fileInfo.UploadAlias, ThePath + fileInfo.Path);
-						fileIndicators_[fileInfo].Image = Resource1.green_dot;
+						//fileIndicators_[fileInfo].Image = Resource1.green_dot;
 					}
 					ReadyToGo_ = true;
 					updateLabelText.Text = Locale.Get("StatusUpdatingDone");
@@ -352,10 +403,17 @@ namespace YobaLoncher {
 
 		private void launch() {
 			string args = "/C \"" + ThePath + Program.LoncherSettings.ExeName + "\"";
-			if (ThePath.Contains("steamapps")) {
-				args = "/C explorer steam://run/" + Program.LoncherSettings.SteamID;
+			if (LauncherConfig.LaunchFromGalaxy) {
+				args = string.Format("/command=runGame /gameId={1} /path=\"{0}\"", ThePath, Program.LoncherSettings.GogID);
+				Process.Start(new ProcessStartInfo { Arguments = args, FileName = LauncherConfig.GalaxyDir });
 			}
-			Process.Start(new ProcessStartInfo { Arguments = args, FileName = "cmd", WindowStyle = ProcessWindowStyle.Hidden });
+			else {
+				if (ThePath.Contains("steamapps")) {
+					args = "/C explorer steam://run/" + Program.LoncherSettings.SteamID;
+				}
+				Process.Start(new ProcessStartInfo { Arguments = args, FileName = "cmd", WindowStyle = ProcessWindowStyle.Hidden });
+			}
+			YU.Log(args);
 			launchGameBtn.Enabled = false;
 			System.Threading.Thread.Sleep(1800);
 			launchGameBtn.Enabled = true;
@@ -367,12 +425,21 @@ namespace YobaLoncher {
 			if (settingsDialog.ShowDialog(this) == DialogResult.OK) {
 				LauncherConfig.StartPage = settingsDialog.OpeningPanel;
 				LauncherConfig.GameDir = settingsDialog.GamePath;
+				LauncherConfig.LaunchFromGalaxy = settingsDialog.LaunchViaGalaxy;
+				bool prevOffline = LauncherConfig.StartOffline;
+				LauncherConfig.StartOffline = settingsDialog.OfflineMode;
 				LauncherConfig.Save();
+				settingsDialog.Dispose();
 				if (LauncherConfig.GameDir != Program.GamePath) {
 					Hide();
 					new PreloaderForm(this).Show();
 				}
-				settingsDialog.Dispose();
+				else if (prevOffline != LauncherConfig.StartOffline) {
+					if (YobaDialog.ShowDialog(Locale.Get(LauncherConfig.StartOffline ? "OfflineModeSet" : "OnlineModeSet"), YobaDialog.YesNoBtns) == DialogResult.Yes) {
+						Hide();
+						new PreloaderForm(this).Show();
+					}
+				}
 			}
 		}
 
