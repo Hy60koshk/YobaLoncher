@@ -68,6 +68,14 @@ namespace YobaLoncher {
 			, { "DLRate", "Downloading: {3} - {0} of {1} @ {2}" }
 			, { "AllFilesIntact", "All files intact, we're ready to go." }
 			, { "FilesMissing", "{0} files are missing or out of date." }
+			, { "StatusListDownloadedFile", "File is OK" }
+			, { "StatusListRecommendedFile", "Existing file" }
+			, { "StatusListOptionalFile", "Optional file" }
+			, { "StatusListRequiredFile", "Required file" }
+			, { "StatusListDownloadedFileTooltip", "File is OK" }
+			, { "StatusListRecommendedFileTooltip", "File already exists, and it is not neccessary for the file to be of particular version, yet if you will run into any problems, you might start from downloading the recommended version of the file." }
+			, { "StatusListOptionalFileTooltip", "Optional file" }
+			, { "StatusListRequiredFileTooltip", "Required file" }
 			, { "StatusCopyingFiles", "Updating files in the game directory..." }
 			, { "StatusUpdatingDone", "Done!" }
 			, { "StatusDownloadError", "Download failed" }

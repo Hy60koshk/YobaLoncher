@@ -317,12 +317,14 @@ namespace YobaLoncher {
 		public string Url;
 		public string Path;
 		public string Description;
+		public string Tooltip;
 		public List<string> Hashes;
 		public bool IsOK = false;
+		public bool IsPresent = false;
 		public string UploadAlias;
 		public uint Size;
 		public int Importance = 0;
-		public bool CheckedToDl = true;
+		public bool IsCheckedToDl = false;
 
 		public bool IsComplete {
 			get {

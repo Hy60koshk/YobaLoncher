@@ -15,7 +15,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace YobaLoncher {
-	[ComVisible(true)]
 	public partial class MainForm : Form {
 		public const int WM_NCLBUTTONDOWN = 0xA1;
 		public const int HT_CAPTION = 0x2;
@@ -31,8 +30,8 @@ namespace YobaLoncher {
 		private bool ReadyToGo_ = false;
 
 		private long lastDlstringUpdate_ = -1;
+		private string statusListClass_ = "";
 
-		[PermissionSet(SecurityAction.Demand, Name = "FullTrust")]
 		[ComVisible(true)]
 		public class StatusController {
 			public class SFileInfo {
@@ -45,30 +44,26 @@ namespace YobaLoncher {
 				}
 			}
 
-			//public SFileInfo[] Files;
 			private static StatusController _instance = null;
+			internal MainForm Form = null;
 			internal Dictionary<string, FileInfo> FileMap;
 
 			public void UncheckFile(string id) {
 				FileInfo fi = FileMap[id];
-				if (fi.Importance > 1) {
-					fi.CheckedToDl = false;
+				if (fi.Importance > 0) {
+					fi.IsCheckedToDl = false;
+					Form.CheckReady();
 				}
 			}
 			public void CheckFile(string id) {
-				FileMap[id].CheckedToDl = true;
+				FileMap[id].IsCheckedToDl = true;
+				Form.SetReady(false);
 			}
 
 			public static StatusController Instance {
 				get {
 					if (_instance is null) {
 						_instance = new StatusController();
-						//_instance.Files = new SFileInfo[Program.LoncherSettings.Files.Count];
-
-						/*for (int i = 0; i < _instance.Files.Length; i++) {
-							FileInfo fi = Program.LoncherSettings.Files[i];
-							_instance.Files[i] = new SFileInfo(fi.Description ?? fi.Path, fi.IsOK);
-						}*/
 					}
 					return _instance;
 				}
@@ -88,15 +83,20 @@ namespace YobaLoncher {
 			int missingFilesCount = Program.GameFileCheckResult.InvalidFiles.Count;
 
 			if (missingFilesCount > 0) {
-				updateLabelText.Text = String.Format(Locale.Get("FilesMissing"), missingFilesCount);
-				launchGameBtn.Text = Locale.Get("UpdateBtn");
 				filesToUpload_ = Program.GameFileCheckResult.InvalidFiles;
+				bool allowRun = true;
+				foreach (FileInfo fi in filesToUpload_) {
+					if (fi.Importance < 2 && (!fi.IsPresent || (!fi.IsOK && fi.Importance < 1))) {
+						allowRun = false;
+					}
+					else {
+						missingFilesCount--;
+					}
+				}
+				SetReady(allowRun);
 			}
-			else {
-				updateLabelText.Text = Locale.Get("AllFilesIntact");
-				ReadyToGo_ = true;
-				launchGameBtn.Text = Locale.Get("LaunchBtn");
-			}
+			updateLabelText.Text = ReadyToGo_ ? Locale.Get("AllFilesIntact") : String.Format(Locale.Get("FilesMissing"), missingFilesCount);
+
 			changelogMenuBtn.Text = Locale.Get("ChangelogBtn");
 			linksMenuBtn.Text = Locale.Get("LinksBtn");
 			settingsButton.Text = Locale.Get("SettingsBtn");
@@ -139,33 +139,10 @@ namespace YobaLoncher {
 			statusBowser.Location = new Point(0, 0);
 
 			statusBowser.ObjectForScripting = StatusController.Instance;
-
-			StringBuilder statusSb = new StringBuilder();
-			GameVersion gameVersion = Program.LoncherSettings.GameVersion;
-
-			int finum = 0;
+			StatusController.Instance.Form = this;
 			StatusController.Instance.FileMap = new Dictionary<string, FileInfo>();
 
-			void appendFiles(StringBuilder sb, List<FileInfo> files) {
-				foreach (FileInfo fi in files) {
-					string id = "fileNumber" + finum++;
-					StatusController.Instance.FileMap[id] = fi;
-
-					sb.Append("<label><input type='checkbox' checked class='")
-						.Append(fi.IsOK ? "exists" : (fi.Importance > 1 ? "optional" : "forced"))
-						.Append("' id='").Append(id).Append("'></input><span> ")
-						.Append(fi.Description ?? fi.Path).Append("</span></label>");
-				}
-			}
-
-			foreach (FileGroup fg in gameVersion.FileGroups) {
-				statusSb.Append("<div class='group-spoiler-button'><span class='spoilersym'>- </span>").Append(fg.Name).Append("</div><div class='group-spoiler'>");
-				appendFiles(statusSb, fg.Files);
-				statusSb.Append("</div><div class='spoilerdash'></div>");
-			}
-			appendFiles(statusSb, gameVersion.Files);
-			statusBowser.DocumentText = Resource1.status_template.Replace("[[[STATUS]]]", statusSb.ToString());//Program.LoncherSettings.ChangelogHtml;//"data:text/html;charset=UTF-8," + 
-
+			UpdateStatusWebView();
 
 			if (Program.LoncherSettings.UI.ContainsKey("UpdateLabel")) {
 				UIElement updateLabelInfo = Program.LoncherSettings.UI["UpdateLabel"];
@@ -273,6 +250,67 @@ namespace YobaLoncher {
 			PerformLayout();
 		}
 
+		private void UpdateStatusWebView() {
+			StringBuilder statusSb = new StringBuilder();
+			GameVersion gameVersion = Program.LoncherSettings.GameVersion;
+
+			int finum = 0;
+
+			void appendFiles(StringBuilder sb, List<FileInfo> files) {
+				foreach (FileInfo fi in files) {
+					string id = "fileNumber" + finum++;
+					StatusController.Instance.FileMap[id] = fi;
+					string tooltip = fi.Tooltip;
+					string statusText = null;
+					sb.Append("<div class='fileEntry ");
+					if (fi.IsOK) {
+						sb.Append("exists");
+						fi.IsCheckedToDl = false;
+						statusText = Locale.Get("StatusListDownloadedFile");
+						if (tooltip is null) {
+							tooltip = Locale.Get("StatusListDownloadedFileTooltip");
+						}
+					}
+					else if (fi.Importance == 1 && fi.IsPresent) {
+						sb.Append("recommended");
+						statusText = Locale.Get("StatusListRecommendedFile");
+						if (tooltip is null) {
+							tooltip = Locale.Get("StatusListRecommendedFileTooltip");
+						}
+					}
+					else if (fi.Importance > 1) {
+						sb.Append("optional");
+						statusText = Locale.Get("StatusListOptionalFile");
+						if (tooltip is null) {
+							tooltip = Locale.Get("StatusListOptionalFileTooltip");
+						}
+					}
+					else {
+						sb.Append("forced");
+						statusText = Locale.Get("StatusListRequiredFile");
+						fi.IsCheckedToDl = true;
+						if (tooltip is null) {
+							tooltip = Locale.Get("StatusListRequiredFileTooltip");
+						}
+					}
+					if (fi.IsCheckedToDl) {
+						sb.Append(" checked");
+					}
+					sb.Append("' id='").Append(id).Append("' title='").Append(tooltip).Append("'> ").Append(fi.Description ?? fi.Path).Append("</div>");
+					//<span class='statusIndicator'>").Append(statusText).Append("</span>
+				}
+			}
+
+			foreach (FileGroup fg in gameVersion.FileGroups) {
+				statusSb.Append("<div class='group-spoiler-button'><span class='spoilersym'>- </span>").Append(fg.Name).Append("</div><div class='group-spoiler'>");
+				appendFiles(statusSb, fg.Files);
+				statusSb.Append("</div><div class='spoilerdash'></div>");
+			}
+			appendFiles(statusSb, gameVersion.Files);
+			statusBowser.DocumentText = Resource1.status_template.Replace("[[[STATUS]]]", statusSb.ToString());//Program.LoncherSettings.ChangelogHtml;//"data:text/html;charset=UTF-8," + 
+
+		}
+
 		private async void DownloadFile(FileInfo fileInfo) {
 			if (!YU.stringHasText(fileInfo.UploadAlias)) {
 				fileInfo.UploadAlias = fileInfo.Hashes.Count > 0 ? fileInfo.Hashes[0] : null;
@@ -324,14 +362,23 @@ namespace YobaLoncher {
 		}
 
 		private void DownloadNext() {
-			//fileIndicators_[currentFile_.Value].Image = Resource1.yellow_dot;
-			currentFile_ = currentFile_.Next;
-			if (currentFile_ == null) {
+			do {
+				currentFile_ = currentFile_.Next;
+			}
+			while ((currentFile_ != null) && !currentFile_.Value.IsCheckedToDl);
+			
+			if (currentFile_ != null) {
+				DownloadFile(currentFile_.Value);
+			}
+			else {
 				string filename = "";
 				updateProgressBar.Value = 100;
 				updateLabelText.Text = Locale.Get("StatusCopyingFiles");
 				try {
 					foreach (FileInfo fileInfo in filesToUpload_) {
+						if (!fileInfo.IsCheckedToDl) {
+							continue;
+						}
 						filename = fileInfo.Path;
 						String[] pathparts = filename.Split('/');
 						string dirpath = ThePath;
@@ -346,12 +393,15 @@ namespace YobaLoncher {
 							File.Delete(ThePath + fileInfo.Path);
 						}
 						File.Move(PreloaderForm.UPDPATH + fileInfo.UploadAlias, ThePath + fileInfo.Path);
-						//fileIndicators_[fileInfo].Image = Resource1.green_dot;
+						fileInfo.IsOK = true;
+						fileInfo.IsPresent = true;
 					}
-					ReadyToGo_ = true;
+					
 					updateLabelText.Text = Locale.Get("StatusUpdatingDone");
-					launchGameBtn.Text = Locale.Get("LaunchBtn");
+					SetReady(true);
+					//statusBowser.Document.GetElementById("articleContent").SetAttribute("class", statusListClass_);
 					launchGameBtn.Enabled = true;
+					UpdateStatusWebView();
 					if (YobaDialog.ShowDialog(Locale.Get("UpdateSuccessful"), YobaDialog.YesNoBtns) == DialogResult.Yes) {
 						launch();
 					}
@@ -362,9 +412,7 @@ namespace YobaLoncher {
 				catch (Exception ex) {
 					ShowDownloadError(string.Format(Locale.Get("CannotMoveFile"), filename) + ":\r\n" + ex.Message);
 				}
-			}
-			else {
-				DownloadFile(currentFile_.Value);
+				
 			}
 		}
 
@@ -373,6 +421,26 @@ namespace YobaLoncher {
 			launchGameBtn.Enabled = true;
 			updateProgressBar.Value = 0;
 			updateLabelText.Text = Locale.Get("StatusDownloadError");
+			UpdateStatusWebView();
+		}
+
+		private void SetReady(bool isReady) {
+			if (isReady) {
+				ReadyToGo_ = true;
+				launchGameBtn.Text = Locale.Get("LaunchBtn");
+			}
+			else {
+				ReadyToGo_ = false;
+				launchGameBtn.Text = Locale.Get("UpdateBtn");
+			}
+		}
+		private void CheckReady() {
+			foreach (FileInfo fi in filesToUpload_) {
+				if (fi.IsCheckedToDl) {
+					return;
+				}
+			}
+			SetReady(true);
 		}
 
 		public static string FormatBytes(long byteCount) {
@@ -394,8 +462,14 @@ namespace YobaLoncher {
 				launch();
 			}
 			else {
+				HtmlElement statusList = statusBowser.Document.GetElementById("articleContent");
+				statusListClass_ = statusList.GetAttribute("class");
+				statusList.SetAttribute("class", statusListClass_ + " disabled");
 				launchGameBtn.Enabled = false;
 				currentFile_ = filesToUpload_.First;
+				while ((currentFile_ != null) && !currentFile_.Value.IsCheckedToDl) {
+					currentFile_ = currentFile_.Next;
+				}
 				downloadProgressTracker_ = new DownloadProgressTracker(50, TimeSpan.FromMilliseconds(500));
 				DownloadFile(currentFile_.Value);
 			}

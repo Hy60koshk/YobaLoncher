@@ -126,9 +126,6 @@
     <Compile Include="SettingsDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="UploadSelectionDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="WebBrowserHelper.cs" />
     <Compile Include="YobaDialog.cs">
       <SubType>Form</SubType>

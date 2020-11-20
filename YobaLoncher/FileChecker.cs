@@ -80,6 +80,7 @@ namespace YobaLoncher {
 			}
 			string filepath = root + file.Path;
 			if (File.Exists(filepath) && (new System.IO.FileInfo(filepath).Length > 0)) {
+				file.IsPresent = true;
 				if (file.Hashes == null || file.Hashes.Count == 0) {
 					return true;
 				}
