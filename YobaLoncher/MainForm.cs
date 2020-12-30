@@ -203,7 +203,7 @@ namespace YobaLoncher {
 								else {
 									panel.BackgroundImageLayout = ImageLayout.Stretch;
 								}
-								panel.BackgroundImage = new Bitmap(PreloaderForm.IMGPATH + uiInfo.BgImage.Path);
+								panel.BackgroundImage = YU.readBitmap(PreloaderForm.IMGPATH + uiInfo.BgImage.Path);
 							}
 						}
 					}

@@ -25,6 +25,13 @@ namespace YobaLoncher {
 #endif
 		}
 
+		public static Bitmap readBitmap(string path) {
+			FileStream ffs = File.OpenRead(path);
+			Bitmap bmp = new Bitmap(ffs);
+			ffs.Close();
+			return bmp;
+		}
+
 		public static void setFont(Control comp, string fontName, string fontSize) {
 			int fs = 12;
 			if (stringHasText(fontSize)) {

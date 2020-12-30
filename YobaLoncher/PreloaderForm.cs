@@ -24,19 +24,33 @@ namespace YobaLoncher {
 		public const string SETTINGSPATH = @"loncherData\settings";
 		public const string	LOCPATH = @"loncherData\loc";
 
+		public const string BG_FILE = IMGPATH + @"loncherbg.png";
+		public const string ICON_FILE = IMGPATH + @"icon.png";
+
 		public PreloaderForm() : this(null) { }
 
 		public PreloaderForm(MainForm oldMainForm) {
 			InitializeComponent();
 			oldMainForm_ = oldMainForm;
 			this.BackgroundImageLayout = ImageLayout.Stretch;
-			string bgfile = IMGPATH + @"loncherbg.png";
-			if (File.Exists(bgfile)) {
+			
+			if (File.Exists(BG_FILE)) {
 				try {
-					this.BackgroundImage = new Bitmap(bgfile);
+					this.BackgroundImage = YU.readBitmap(BG_FILE);
 				}
 				catch {
 					loadingLabelError.Text = Locale.Get("CannotSetBackground");
+				}
+			}
+			if (File.Exists(ICON_FILE)) {
+				try {
+					Bitmap bm = YU.readBitmap(ICON_FILE);
+					if (bm != null) {
+						Icon = Icon.FromHandle(bm.GetHicon());
+					}
+				}
+				catch {
+					loadingLabelError.Text = Locale.Get("CannotSetIcon");
 				}
 			}
 			wc_ = new WebClient();
@@ -142,8 +156,23 @@ namespace YobaLoncher {
 			}
 			return false;
 		}
+		private async Task<bool> assertFile(FileInfo fi, string dir, string targetPath) {
+			if (fi != null && YU.stringHasText(fi.Path) && YU.stringHasText(fi.Url)) {
+				if (!FileChecker.CheckFileMD5(dir, fi)) {
+					await loadFile(fi.Url, targetPath);
+				}
+				return true;
+			}
+			return false;
+		}
 		private bool assertOfflineFile(FileInfo fi, string dir) {
 			if (fi != null && YU.stringHasText(fi.Path) && File.Exists(dir + fi.Path)) {
+				return true;
+			}
+			return false;
+		}
+		private bool assertOfflineFile(FileInfo fi, string dir, string targetPath) {
+			if (fi != null && YU.stringHasText(fi.Path) && File.Exists(targetPath)) {
 				return true;
 			}
 			return false;
@@ -345,16 +374,16 @@ namespace YobaLoncher {
 					try {
 						LauncherData.LauncherDataRaw raw = Program.LoncherSettings.RAW;
 						if (await assertFile(raw.Background, IMGPATH)) {
-							Program.LoncherSettings.Background = new Bitmap(IMGPATH + raw.Background.Path);
+							Program.LoncherSettings.Background = YU.readBitmap(IMGPATH + raw.Background.Path);
 						}
-						if (await assertFile(raw.Icon, IMGPATH)) {
-							Bitmap bm = new Bitmap(IMGPATH + raw.Icon.Path);
+						if (await assertFile(raw.Icon, IMGPATH, ICON_FILE)) {
+							Bitmap bm = YU.readBitmap(ICON_FILE);
 							if (bm != null) {
 								Program.LoncherSettings.Icon = Icon.FromHandle(bm.GetHicon());
 							}
 						}
-						if (await assertFile(raw.PreloaderBackground, IMGPATH)) {
-							this.BackgroundImage = new Bitmap(IMGPATH + raw.PreloaderBackground.Path);
+						if (await assertFile(raw.PreloaderBackground, IMGPATH, BG_FILE)) {
+							this.BackgroundImage = YU.readBitmap(BG_FILE);
 						}
 						if (Program.LoncherSettings.Icon == null) {
 							Program.LoncherSettings.Icon = this.Icon;
@@ -418,11 +447,11 @@ namespace YobaLoncher {
 						}
 					}
 					try {
-						loadingLabel.Text = Locale.Get("PreparingChangelog");
+						loadingLabel.Text = Locale.Get("PreparingToLaunch");
 						await Program.LoncherSettings.InitChangelog();
 						incProgress(5);
 						logDeltaTicks("changelog");
-						loadingLabel.Text = Locale.Get("PreparingToLaunch");
+						//loadingLabel.Text = Locale.Get("PreparingToLaunch");
 						try {
 							if (findGamePath()) {
 								try {
@@ -523,16 +552,16 @@ namespace YobaLoncher {
 						YobaDialog.ShowDialog(Locale.Get("CannotGetLocaleFile") + ":\r\n" + ex.Message);
 					}
 					if (assertOfflineFile(raw.Background, IMGPATH)) {
-						Program.LoncherSettings.Background = new Bitmap(IMGPATH + raw.Background.Path);
+						Program.LoncherSettings.Background = YU.readBitmap(IMGPATH + raw.Background.Path);
 					}
-					if (assertOfflineFile(raw.Icon, IMGPATH)) {
-						Bitmap bm = new Bitmap(IMGPATH + raw.Icon.Path);
+					if (assertOfflineFile(raw.Icon, IMGPATH, ICON_FILE)) {
+						Bitmap bm = YU.readBitmap(IMGPATH + raw.Icon.Path);
 						if (bm != null) {
 							Program.LoncherSettings.Icon = Icon.FromHandle(bm.GetHicon());
 						}
 					}
-					if (assertOfflineFile(raw.PreloaderBackground, IMGPATH)) {
-						this.BackgroundImage = new Bitmap(IMGPATH + raw.PreloaderBackground.Path);
+					if (assertOfflineFile(raw.PreloaderBackground, IMGPATH, BG_FILE)) {
+						this.BackgroundImage = YU.readBitmap(IMGPATH + raw.PreloaderBackground.Path);
 					}
 					if (Program.LoncherSettings.Icon == null) {
 						Program.LoncherSettings.Icon = this.Icon;

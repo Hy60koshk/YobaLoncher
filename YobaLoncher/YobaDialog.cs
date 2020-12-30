@@ -199,7 +199,7 @@ namespace YobaLoncher {
 				else {
 					BackgroundImageLayout = ImageLayout.Stretch;
 				}
-				BackgroundImage = new Bitmap(PreloaderForm.IMGPATH + styleInfo.BgImage.Path);
+				BackgroundImage = YU.readBitmap(PreloaderForm.IMGPATH + styleInfo.BgImage.Path);
 			}
 		}
 	}
