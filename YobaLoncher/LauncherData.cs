@@ -20,6 +20,7 @@ namespace YobaLoncher {
 		public static string GalaxyDir = null;
 		public static bool LaunchFromGalaxy = false;
 		public static bool StartOffline = false;
+		public static bool CloseOnLaunch = false;
 		public static StartPageEnum StartPage = StartPageEnum.Status;
 		private const string CFGFILE = @"loncherData\loncher.cfg";
 
@@ -30,11 +31,21 @@ namespace YobaLoncher {
 					, "startpage = " + (int)StartPage
 					, "startviagalaxy = " + (LaunchFromGalaxy ? 1 : 0)
 					, "offlinemode = " + (StartOffline ? 1 : 0)
+					, "closeonlaunch = " + (CloseOnLaunch ? 1 : 0)
 				});
 			}
 			catch (Exception ex) {
 				YobaDialog.ShowDialog(Locale.Get("CannotWriteCfg") + ":\r\n" + ex.Message);
 			}
+		}
+
+		private static bool ParseBooleanParam(string line) {
+			string[] vals = line.Split('=');
+			if (vals.Length > 1) {
+				string val = vals[1].Trim();
+				return !"0".Equals(val) && val.Length != 5;
+			}
+			return false;
 		}
 
 		public static void Load() {
@@ -60,21 +71,14 @@ namespace YobaLoncher {
 							}
 							else if (line.StartsWith("startviagalaxy")) {
 								if (GalaxyDir != null) {
-									string[] vals = line.Split('=');
-									if (vals.Length > 1) {
-										string val = vals[1].Trim();
-										LaunchFromGalaxy = !"0".Equals(val) && val.Length != 5;
-									}
+									LaunchFromGalaxy = ParseBooleanParam(line);
 								}
 							}
 							else if (line.StartsWith("offlinemode")) {
-								if (GalaxyDir != null) {
-									string[] vals = line.Split('=');
-									if (vals.Length > 1) {
-										string val = vals[1].Trim();
-										StartOffline = !"0".Equals(val) && val.Length != 5;
-									}
-								}
+								StartOffline = ParseBooleanParam(line);
+							}
+							else if (line.StartsWith("closeonlaunch")) {
+								CloseOnLaunch = ParseBooleanParam(line);
 							}
 						}
 					}
@@ -307,7 +311,7 @@ namespace YobaLoncher {
 		public string FontSize;
 		public Vector Position;
 		public Vector Size;
-		public bool CustomStyle;
+		public bool CustomStyle = false;
 		public System.Windows.Forms.DialogResult Result;
 	}
 	class LinkButton : UIElement {

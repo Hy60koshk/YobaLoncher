@@ -95,6 +95,9 @@ namespace YobaLoncher {
 				}
 				SetReady(allowRun);
 			}
+			else {
+				SetReady(true);
+			}
 			updateLabelText.Text = ReadyToGo_ ? Locale.Get("AllFilesIntact") : String.Format(Locale.Get("FilesMissing"), missingFilesCount);
 
 			changelogMenuBtn.Text = Locale.Get("ChangelogBtn");
@@ -307,8 +310,14 @@ namespace YobaLoncher {
 				statusSb.Append("</div><div class='spoilerdash'></div>");
 			}
 			appendFiles(statusSb, gameVersion.Files);
-			statusBowser.DocumentText = Resource1.status_template.Replace("[[[STATUS]]]", statusSb.ToString());//Program.LoncherSettings.ChangelogHtml;//"data:text/html;charset=UTF-8," + 
-
+			string template = Resource1.status_template.Replace("[[[DOWNLOAD]]]", Locale.Get("StatusComboboxDownload"))
+				.Replace("[[[NODOWNLOAD]]]", Locale.Get("StatusComboboxNoDownload"))
+				.Replace("[[[UPDATE]]]", Locale.Get("StatusComboboxUpdate"))
+				.Replace("[[[UPDATEFORCED]]]", Locale.Get("StatusComboboxUpdateForced"))
+				.Replace("[[[DOWNLOADFORCED]]]", Locale.Get("StatusComboboxDownloadForced"))
+				.Replace("[[[NOUPDATE]]]", Locale.Get("StatusComboboxNoUpdate"))
+				.Replace("[[[STATUS]]]", statusSb.ToString());
+			statusBowser.DocumentText = template; //Program.LoncherSettings.ChangelogHtml;//"data:text/html;charset=UTF-8," + 
 		}
 
 		private async void DownloadFile(FileInfo fileInfo) {
@@ -333,6 +342,14 @@ namespace YobaLoncher {
 				try {
 					webClient.DownloadProgressChanged += new DownloadProgressChangedEventHandler(OnDownloadProgressChanged);
 					webClient.DownloadFileCompleted += new AsyncCompletedEventHandler(OnDownloadCompleted);
+					updateProgressBar.Value = 0;
+					updateLabelText.Text = string.Format(
+						Locale.Get("DLRate")
+						, FormatBytes(0)
+						, FormatBytes(fileInfo.Size)
+						, ""
+						, currentFile_.Value.Description
+					);
 					await webClient.DownloadFileTaskAsync(new Uri(fileInfo.Url), uploadFilename);
 				}
 				catch (Exception ex) {
@@ -490,7 +507,12 @@ namespace YobaLoncher {
 			YU.Log(args);
 			launchGameBtn.Enabled = false;
 			System.Threading.Thread.Sleep(1800);
-			launchGameBtn.Enabled = true;
+			if (LauncherConfig.CloseOnLaunch) {
+				Application.Exit();
+			}
+			else {
+				launchGameBtn.Enabled = true;
+			}
 		}
 
 		private void settingsButton_Click(object sender, EventArgs e) {
@@ -502,6 +524,7 @@ namespace YobaLoncher {
 				LauncherConfig.LaunchFromGalaxy = settingsDialog.LaunchViaGalaxy;
 				bool prevOffline = LauncherConfig.StartOffline;
 				LauncherConfig.StartOffline = settingsDialog.OfflineMode;
+				LauncherConfig.CloseOnLaunch = settingsDialog.CloseOnLaunch;
 				LauncherConfig.Save();
 				settingsDialog.Dispose();
 				if (LauncherConfig.GameDir != Program.GamePath) {

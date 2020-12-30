@@ -14,15 +14,17 @@ namespace YobaLoncher {
 		private YobaComboBox openingPanelCB;
 		private CheckBox launchViaGalaxy;
 		private CheckBox offlineMode;
+		private CheckBox closeLauncherOnLaunch;
 		//private YobaButton openingPanelCB;
 
 		public string GamePath => gamePath.Text;
 		public StartPageEnum OpeningPanel => (StartPageEnum)openingPanelCB.SelectedIndex;
 		public bool LaunchViaGalaxy => launchViaGalaxy.Checked;
 		public bool OfflineMode => offlineMode.Checked;
+		public bool CloseOnLaunch => closeLauncherOnLaunch.Checked;
 		private CommonOpenFileDialog folderBrowserDialog;
 
-		public SettingsDialog() : base(new Size(480, 280), new UIElement[] {
+		public SettingsDialog() : base(new Size(480, 313), new UIElement[] {
 			new UIElement() {
 				Caption = Locale.Get("Cancel")
 				, Result = DialogResult.Cancel
@@ -98,14 +100,22 @@ namespace YobaLoncher {
 
 			theToolTip.SetToolTip(offlineMode, Locale.Get("SettingsOfflineModeTooltip"));
 
+			closeLauncherOnLaunch = new CheckBox();
+			closeLauncherOnLaunch.Text = Locale.Get("SettingsCloseOnLaunch");
+			closeLauncherOnLaunch.Font = new Font("Tahoma", 12F, FontStyle.Regular, GraphicsUnit.Pixel, 204);
+			closeLauncherOnLaunch.Location = new Point(20, 152);
+			closeLauncherOnLaunch.Size = new Size(440, 24);
+			closeLauncherOnLaunch.Checked = LauncherConfig.CloseOnLaunch;
+			closeLauncherOnLaunch.BackColor = Color.Transparent;
+
 			Label openingPanelLabel = new Label();
 			openingPanelLabel.Text = Locale.Get("SettingsOpeningPanel");
 			openingPanelLabel.Font = new Font("Tahoma", 12F, FontStyle.Regular, GraphicsUnit.Pixel, 204);
-			openingPanelLabel.Location = new Point(18, 154);
+			openingPanelLabel.Location = new Point(18, 187);
 			openingPanelLabel.Size = new Size(444, 40);
 
 			openingPanelCB = new YobaComboBox();
-			openingPanelCB.Location = new Point(20, 175);
+			openingPanelCB.Location = new Point(20, 208);
 			openingPanelCB.Name = "openingPanel";
 			openingPanelCB.Size = new Size(440, 22);
 			openingPanelCB.DataSource = new string[] {
@@ -134,13 +144,15 @@ namespace YobaLoncher {
 			gamePath.TabIndex = 1;
 			browseButton.TabIndex = 2;
 			launchViaGalaxy.TabIndex = 3;
-			offlineMode.TabIndex = 3;
-			openingPanelCB.TabIndex = 4;
+			offlineMode.TabIndex = 4;
+			closeLauncherOnLaunch.TabIndex = 5;
+			openingPanelCB.TabIndex = 10;
 			
 			Controls.Add(fieldBackground);
 			Controls.Add(browseButton);
 			Controls.Add(launchViaGalaxy);
 			Controls.Add(offlineMode);
+			Controls.Add(closeLauncherOnLaunch);
 			Controls.Add(openingPanelCB);
 
 			Controls.Add(openingPanelLabel);

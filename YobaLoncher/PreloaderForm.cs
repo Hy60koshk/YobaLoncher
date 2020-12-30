@@ -118,8 +118,12 @@ namespace YobaLoncher {
 		}
 
 		private async Task loadFile(string src, string filename) {
+			await loadFile(src, filename, string.Format(Locale.Get("UpdDownloading"), filename));
+		}
+
+		private async Task loadFile(string src, string filename, string statusText) {
 			progressBarLeft_ = _progressBar1.Value;
-			loadingLabel.Text = string.Format(Locale.Get("UpdDownloading"), filename);
+			loadingLabel.Text = statusText;
 			await wc_.DownloadFileTaskAsync(src, filename);
 			downloadProgressTracker_.Reset();
 			progressBarLeft_ += 3;
@@ -307,13 +311,11 @@ namespace YobaLoncher {
 #else
 						if (!FileChecker.CheckFileMD5(Application.ExecutablePath, Program.LoncherSettings.LoncherHash)) {
 							if (YU.stringHasText(Program.LoncherSettings.LoncherExe)) {
-								loadingLabel.Text = Locale.Get("UpdatingLoncher");
 								string newLoncherPath = Application.ExecutablePath + ".new";
 								string appname = Application.ExecutablePath;
 								appname = appname.Substring(appname.LastIndexOf('\\') + 1);
-								progressBarLeft_ = _progressBar1.Value;
-								await wc_.DownloadFileTaskAsync(Program.LoncherSettings.LoncherExe, newLoncherPath);
-								downloadProgressTracker_.Reset();
+								await loadFile(Program.LoncherSettings.LoncherExe, newLoncherPath, Locale.Get("UpdatingLoncher"));
+								
 								if (FileChecker.CheckFileMD5(newLoncherPath, Program.LoncherSettings.LoncherHash)) {
 									Process.Start(new ProcessStartInfo {
 										Arguments = String.Format("/C choice /C Y /N /D Y /T 1 & Del \"{0}\" & Rename \"{1}\" \"{2}\" & \"{0}\""
@@ -416,9 +418,11 @@ namespace YobaLoncher {
 						}
 					}
 					try {
+						loadingLabel.Text = Locale.Get("PreparingChangelog");
 						await Program.LoncherSettings.InitChangelog();
 						incProgress(5);
 						logDeltaTicks("changelog");
+						loadingLabel.Text = Locale.Get("PreparingToLaunch");
 						try {
 							if (findGamePath()) {
 								try {

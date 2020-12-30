@@ -76,6 +76,12 @@ namespace YobaLoncher {
 			, { "StatusListRecommendedFileTooltip", "File already exists, and it is not neccessary for the file to be of particular version, yet if you will run into any problems, you might start from downloading the recommended version of the file." }
 			, { "StatusListOptionalFileTooltip", "Optional file" }
 			, { "StatusListRequiredFileTooltip", "Required file" }
+			, { "StatusComboboxDownload", "Download" }
+			, { "StatusComboboxDownloadForced", "Download" }
+			, { "StatusComboboxNoDownload", "Don't download" }
+			, { "StatusComboboxUpdate", "Update" }
+			, { "StatusComboboxUpdateForced", "Update" }
+			, { "StatusComboboxNoUpdate", "Don't update" }
 			, { "StatusCopyingFiles", "Updating files in the game directory..." }
 			, { "StatusUpdatingDone", "Done!" }
 			, { "StatusDownloadError", "Download failed" }
@@ -95,6 +101,7 @@ namespace YobaLoncher {
 			, { "SettingsOpeningPanelStatus", "Filecheck results" }
 			, { "SettingsOpeningPanelLinks", "Links" }
 			, { "SettingsOpeningPanelMods", "Mods" }
+			, { "SettingsCloseOnLaunch", "Close the Loncher when game starts" }
 			, { "SettingsOfflineMode", "Offline mode" }
 			, { "SettingsOfflineModeTooltip", "Offline mode" }
 			, { "OfflineModeSet", "Launcher set to run in offline mode. Restart now?" }
@@ -106,6 +113,8 @@ namespace YobaLoncher {
 			, { "OldGameVersion", "Your current version of the game ({0}) is not supported!" }
 			, { "UpdatingLoncher", "Updating Yoba Löncher..." }
 			, { "UpdDownloading", "Updating Yoba Löncher - Downloading {0} ..." }
+			, { "PreparingToLaunch", "Preparing to lönch..." }
+			, { "PreparingChangelog", "Checking out what's new..." }
 			, { "CannotGetLocaleFile", "Cannot get or apply localization files" }
 			, { "CannotGetImages", "Cannot get Images" }
 			, { "CannotSetBackground", "Cannot set custom background" }
