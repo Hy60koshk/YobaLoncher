@@ -288,6 +288,7 @@ namespace YobaLoncher {
 			}
 			try {
 				if (!Directory.Exists("loncherData")) {
+					Program.FirstRun = true;
 					Directory.CreateDirectory("loncherData");
 				}
 				if (!Directory.Exists(IMGPATH)) {
@@ -338,31 +339,41 @@ namespace YobaLoncher {
 						wc_.DownloadProgressChanged += new DownloadProgressChangedEventHandler(OnDownloadProgressChanged);
 #if DEBUG
 #else
-						if (!FileChecker.CheckFileMD5(Application.ExecutablePath, Program.LoncherSettings.LoncherHash)) {
-							if (YU.stringHasText(Program.LoncherSettings.LoncherExe)) {
-								string newLoncherPath = Application.ExecutablePath + ".new";
-								string appname = Application.ExecutablePath;
-								appname = appname.Substring(appname.LastIndexOf('\\') + 1);
-								await loadFile(Program.LoncherSettings.LoncherExe, newLoncherPath, Locale.Get("UpdatingLoncher"));
-								
-								if (FileChecker.CheckFileMD5(newLoncherPath, Program.LoncherSettings.LoncherHash)) {
-									Process.Start(new ProcessStartInfo {
-										Arguments = String.Format("/C choice /C Y /N /D Y /T 1 & Del \"{0}\" & Rename \"{1}\" \"{2}\" & \"{0}\""
-											, Application.ExecutablePath, newLoncherPath, appname)
-										, FileName = "cmd"
-										, WindowStyle = ProcessWindowStyle.Hidden
-									});
-									Application.Exit();
+						if (YU.stringHasText(Program.LoncherSettings.LoncherHash)) {
+							string selfHash = FileChecker.GetFileMD5(Application.ExecutablePath);
+
+							if (!Program.LoncherSettings.LoncherHash.ToUpper().Equals(selfHash)) {
+								if (YU.stringHasText(Program.LoncherSettings.LoncherExe)) {
+									string newLoncherPath = Application.ExecutablePath + ".new";
+									string appname = Application.ExecutablePath;
+									appname = appname.Substring(appname.LastIndexOf('\\') + 1);
+									await loadFile(Program.LoncherSettings.LoncherExe, newLoncherPath, Locale.Get("UpdatingLoncher"));
+
+									string newHash = FileChecker.GetFileMD5(newLoncherPath);
+
+									if (selfHash.Equals(Program.PreviousVersionHash)) {
+										YU.ErrorAndKill(Locale.Get("LoncherOutOfDate2"));
+									}
+									else if (newHash.Equals(Program.PreviousVersionHash)) {
+										YU.ErrorAndKill(Locale.Get("LoncherOutOfDate3"));
+									}
+									else {
+										Process.Start(new ProcessStartInfo {
+											Arguments = String.Format("/C choice /C Y /N /D Y /T 1 & Del \"{0}\" & Rename \"{1}\" \"{2}\" & \"{0}\" -oldhash {3}"
+													, Application.ExecutablePath, newLoncherPath, appname, selfHash)
+											,
+											FileName = "cmd"
+											,
+											WindowStyle = ProcessWindowStyle.Hidden
+										});
+										Application.Exit();
+									}
 									return;
 								}
 								else {
-									YU.ErrorAndKill(Locale.Get("LoncherOutOfDate2"));
+									YU.ErrorAndKill(Locale.Get("LoncherOutOfDate1"));
 									return;
 								}
-							}
-							else {
-								YU.ErrorAndKill(Locale.Get("LoncherOutOfDate1"));
-								return;
 							}
 						}
 #endif
@@ -373,26 +384,49 @@ namespace YobaLoncher {
 					}
 					try {
 						LauncherData.LauncherDataRaw raw = Program.LoncherSettings.RAW;
-						if (await assertFile(raw.Background, IMGPATH)) {
-							Program.LoncherSettings.Background = YU.readBitmap(IMGPATH + raw.Background.Path);
-						}
 						if (await assertFile(raw.Icon, IMGPATH, ICON_FILE)) {
 							Bitmap bm = YU.readBitmap(ICON_FILE);
 							if (bm != null) {
 								Program.LoncherSettings.Icon = Icon.FromHandle(bm.GetHicon());
+								this.Icon = Program.LoncherSettings.Icon;
 							}
-						}
-						if (await assertFile(raw.PreloaderBackground, IMGPATH, BG_FILE)) {
-							this.BackgroundImage = YU.readBitmap(BG_FILE);
 						}
 						if (Program.LoncherSettings.Icon == null) {
 							Program.LoncherSettings.Icon = this.Icon;
 						}
+						if (await assertFile(raw.PreloaderBackground, IMGPATH, BG_FILE)) {
+							this.BackgroundImage = YU.readBitmap(BG_FILE);
+						}
+						bool gotRandomBG = false;
+						if (raw.RandomBackgrounds != null && raw.RandomBackgrounds.Count > 0) {
+							int randomBGRoll = new Random().Next(0, 1000);
+							int totalRoll = 0;
+							foreach (RandomBgImageInfo rbgi in raw.RandomBackgrounds) {
+								if (await assertFile(rbgi.Background, IMGPATH)) {
+									totalRoll += rbgi.Chance;
+									if (totalRoll > randomBGRoll) {
+										Program.LoncherSettings.Background = YU.readBitmap(IMGPATH + rbgi.Background.Path);
+										gotRandomBG = true;
+										break;
+									}
+								}
+							}
+						}
+						if (!gotRandomBG && await assertFile(raw.Background, IMGPATH)) {
+							Program.LoncherSettings.Background = YU.readBitmap(IMGPATH + raw.Background.Path);
+						}
+
 						if (Program.LoncherSettings.UI.Count > 0) {
 							string[] keys = Program.LoncherSettings.UI.Keys.ToArray();
 							foreach (string key in keys) {
 								if (!(await assertFile(Program.LoncherSettings.UI[key].BgImage, IMGPATH))) {
 									Program.LoncherSettings.UI[key].BgImage = null;
+								}
+								if (!(await assertFile(Program.LoncherSettings.UI[key].BgImageClick, IMGPATH))) {
+									Program.LoncherSettings.UI[key].BgImageClick = null;
+								}
+								if (!(await assertFile(Program.LoncherSettings.UI[key].BgImageHover, IMGPATH))) {
+									Program.LoncherSettings.UI[key].BgImageHover = null;
 								}
 							}
 						}
@@ -401,8 +435,19 @@ namespace YobaLoncher {
 								if (!(await assertFile(lbtn.BgImage, IMGPATH))) {
 									lbtn.BgImage = null;
 								}
+								if (!(await assertFile(lbtn.BgImageClick, IMGPATH))) {
+									lbtn.BgImageClick = null;
+								}
+								if (!(await assertFile(lbtn.BgImageHover, IMGPATH))) {
+									lbtn.BgImageHover = null;
+								}
 							}
 						}
+						/*await assertFile(new FileInfo() {
+							Url = "https://drive.google.com/uc?export=download&confirm=-MpP&id=1fUW0NfP2EYUG6K2hOg6hgajRi59pCBBy"
+							, Path = "legends"
+						}, IMGPATH);*/
+					
 						logDeltaTicks("images");
 					}
 					catch (Exception ex) {

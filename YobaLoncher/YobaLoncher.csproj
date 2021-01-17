@@ -104,6 +104,7 @@
     </Compile>
     <Compile Include="LauncherData.cs" />
     <Compile Include="Locale.cs" />
+    <Compile Include="PngIconConverter.cs" />
     <Compile Include="PreloaderForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -126,7 +127,6 @@
     <Compile Include="SettingsDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="WebBrowserHelper.cs" />
     <Compile Include="YobaDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -185,6 +185,17 @@
     <None Include="resources\locale_default.txt" />
     <None Include="resources\status_template.html" />
     <Content Include="resources\y.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="IWshRuntimeLibrary">
+      <Guid>{F935DC20-1CF0-11D0-ADB9-00C04FD58A0B}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Fody.6.3.0\build\Fody.targets" Condition="Exists('..\packages\Fody.6.3.0\build\Fody.targets')" />

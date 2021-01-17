@@ -10,6 +10,8 @@ namespace YobaLoncher {
 		//public readonly static string SETTINGS_URL = "https://www.dropbox.com/s/tlweb401krzcw9u/settings.json?dl=1";
 		public static LauncherData LoncherSettings;
 		public static bool OfflineMode = false;
+		public static string PreviousVersionHash = null;
+		public static bool FirstRun = false;
 		public static readonly string LoncherPath = Application.ExecutablePath.Substring(0, Application.ExecutablePath.LastIndexOf('\\') + 1);
 		public static readonly string LoncherDataPath = LoncherPath + @"loncherData\";
 		public static string GamePath = "" + LoncherPath;
@@ -20,7 +22,7 @@ namespace YobaLoncher {
 		public static string VersionInfo => String.Format(_about, _version, _buildNumber, _buildVersion);
 
 		private static string _loncherName = "YobaLoncher";
-		private static string _version = "0.2.6.2";
+		private static string _version = "0.2.7.2";
 		private static string _buildVersion = "0.2";
 		private static string _buildNumber = "";
 		private static string _about = "YobaLöncher {0}-{1}";
@@ -30,7 +32,7 @@ namespace YobaLoncher {
 		/// The main entry point for the application.
 		/// </summary>
 		[STAThread]
-		static void Main() {
+		static void Main(string[] args) {
 			try {
 				if (Resource1.BuildTargetOpts.Length > 0) {
 					string[] build = Resource1.BuildTargetOpts.Replace("\r", "").Split('\n');
@@ -84,6 +86,19 @@ namespace YobaLoncher {
 			}
 			catch {
 				_buildNumber = Resource1.BuildDate.Split(',')[0];
+			}
+			for (int aii = 0; aii < args.Length; aii++) {
+				string arg = args[aii];
+				if (arg == "-oldhash") {
+					aii++;
+					if (args.Length > aii && args[aii].Length == 32) {
+						PreviousVersionHash = args[aii];
+						FirstRun = true;
+					}
+					else {
+						MessageBox.Show("Usage error: a string MD5 hash must follow the -oldhash key");
+					}
+				}
 			}
 			Locale.LoadCustomLoc(Resource1.locale_default.Replace("\r", "").Split('\n'));
 			Application.EnableVisualStyles();

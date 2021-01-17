@@ -33,9 +33,9 @@ namespace YobaLoncher {
 		}
 
 		public static void setFont(Control comp, string fontName, string fontSize) {
-			int fs = 12;
+			float fs = 12;
 			if (stringHasText(fontSize)) {
-				if (!int.TryParse(fontSize, out fs)) {
+				if (!float.TryParse(fontSize, out fs)) {
 					fs = 12;
 				}
 			}

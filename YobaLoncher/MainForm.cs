@@ -101,17 +101,18 @@ namespace YobaLoncher {
 			updateLabelText.Text = ReadyToGo_ ? Locale.Get("AllFilesIntact") : String.Format(Locale.Get("FilesMissing"), missingFilesCount);
 
 			changelogMenuBtn.Text = Locale.Get("ChangelogBtn");
-			linksMenuBtn.Text = Locale.Get("LinksBtn");
+			linksButton.Text = Locale.Get("LinksBtn");
 			settingsButton.Text = Locale.Get("SettingsBtn");
-			checkResultMenuBtn.Text = Locale.Get("StatusBtn");
+			statusButton.Text = Locale.Get("StatusBtn");
 			Text = Locale.Get("MainFormTitle");
 
 			theToolTip.SetToolTip(closeButton, Locale.Get("Close"));
 			theToolTip.SetToolTip(minimizeButton, Locale.Get("Minimize"));
 			theToolTip.SetToolTip(changelogMenuBtn, Locale.Get("ChangelogTooltip"));
-			theToolTip.SetToolTip(checkResultMenuBtn, Locale.Get("StatusTooltip"));
-			theToolTip.SetToolTip(linksMenuBtn, Locale.Get("LinksTooltip"));
+			theToolTip.SetToolTip(statusButton, Locale.Get("StatusTooltip"));
+			theToolTip.SetToolTip(linksButton, Locale.Get("LinksTooltip"));
 			theToolTip.SetToolTip(settingsButton, Locale.Get("SettingsTooltip"));
+			theToolTip.SetToolTip(modsButton, Locale.Get("ModsTooltip"));
 
 			changelogPanel.Location = new Point(0, 0);
 			changelogPanel.Size = new Size(610, 330);
@@ -140,6 +141,8 @@ namespace YobaLoncher {
 
 			statusBowser.Size = new Size(610, 330);
 			statusBowser.Location = new Point(0, 0);
+			modsBrowser.Size = new Size(610, 330);
+			modsBrowser.Location = new Point(0, 0);
 
 			statusBowser.ObjectForScripting = StatusController.Instance;
 			StatusController.Instance.Form = this;
@@ -161,11 +164,15 @@ namespace YobaLoncher {
 			string[] menuBtnKeys = new string[] {
 				"LaunchButton", "SettingsButton", "StatusButton", "LinksButton", "ChangelogButton", "ModsButton", "CloseButton", "MinimizeButton"
 			};
-			foreach (string menuBtnKey in menuBtnKeys) {
+			string[] menuBtnControlKeys = new string[] {
+				"launchGameButton", "settingsButton", "statusButton", "linksButton", "changelogMenuBtn", "modsButton", "closeButton", "minimizeButton"
+			};
+			for (int i = 0; i < menuBtnKeys.Length; i++) {
+				string menuBtnKey = menuBtnKeys[i];
 				if (Program.LoncherSettings.UI.ContainsKey(menuBtnKey)) {
 					UIElement launchButtonInfo = Program.LoncherSettings.UI[menuBtnKey];
 					if (launchButtonInfo != null) {
-						Control[] ctrls = Controls.Find(menuBtnKey, true);
+						Control[] ctrls = Controls.Find(menuBtnControlKeys[i], true);
 						if (ctrls.Length > 0) {
 							((YobaButtonAbs)ctrls[0]).ApplyUIStyles(launchButtonInfo);
 						}
@@ -417,7 +424,7 @@ namespace YobaLoncher {
 					updateLabelText.Text = Locale.Get("StatusUpdatingDone");
 					SetReady(true);
 					//statusBowser.Document.GetElementById("articleContent").SetAttribute("class", statusListClass_);
-					launchGameBtn.Enabled = true;
+					launchGameButton.Enabled = true;
 					UpdateStatusWebView();
 					if (YobaDialog.ShowDialog(Locale.Get("UpdateSuccessful"), YobaDialog.YesNoBtns) == DialogResult.Yes) {
 						launch();
@@ -435,7 +442,7 @@ namespace YobaLoncher {
 
 		private void ShowDownloadError(string error) {
 			YobaDialog.ShowDialog(error);
-			launchGameBtn.Enabled = true;
+			launchGameButton.Enabled = true;
 			updateProgressBar.Value = 0;
 			updateLabelText.Text = Locale.Get("StatusDownloadError");
 			UpdateStatusWebView();
@@ -444,11 +451,11 @@ namespace YobaLoncher {
 		private void SetReady(bool isReady) {
 			if (isReady) {
 				ReadyToGo_ = true;
-				launchGameBtn.Text = Locale.Get("LaunchBtn");
+				launchGameButton.Text = Locale.Get("LaunchBtn");
 			}
 			else {
 				ReadyToGo_ = false;
-				launchGameBtn.Text = Locale.Get("UpdateBtn");
+				launchGameButton.Text = Locale.Get("UpdateBtn");
 			}
 		}
 		private void CheckReady() {
@@ -482,7 +489,7 @@ namespace YobaLoncher {
 				HtmlElement statusList = statusBowser.Document.GetElementById("articleContent");
 				statusListClass_ = statusList.GetAttribute("class");
 				statusList.SetAttribute("class", statusListClass_ + " disabled");
-				launchGameBtn.Enabled = false;
+				launchGameButton.Enabled = false;
 				currentFile_ = filesToUpload_.First;
 				while ((currentFile_ != null) && !currentFile_.Value.IsCheckedToDl) {
 					currentFile_ = currentFile_.Next;
@@ -505,18 +512,18 @@ namespace YobaLoncher {
 				Process.Start(new ProcessStartInfo { Arguments = args, FileName = "cmd", WindowStyle = ProcessWindowStyle.Hidden });
 			}
 			YU.Log(args);
-			launchGameBtn.Enabled = false;
+			launchGameButton.Enabled = false;
 			System.Threading.Thread.Sleep(1800);
 			if (LauncherConfig.CloseOnLaunch) {
 				Application.Exit();
 			}
 			else {
-				launchGameBtn.Enabled = true;
+				launchGameButton.Enabled = true;
 			}
 		}
 
 		private void settingsButton_Click(object sender, EventArgs e) {
-			SettingsDialog settingsDialog = new SettingsDialog();
+			SettingsDialog settingsDialog = new SettingsDialog(this);
 			settingsDialog.Icon = Program.LoncherSettings.Icon;
 			if (settingsDialog.ShowDialog(this) == DialogResult.OK) {
 				LauncherConfig.StartPage = settingsDialog.OpeningPanel;
@@ -561,6 +568,13 @@ namespace YobaLoncher {
 			changelogPanel.Visible = false;
 		}
 
+		private void modsButton_Click(object sender, EventArgs e) {
+			linksPanel.Visible = false;
+			statusPanel.Visible = false;
+			modsPanel.Visible = true;
+			changelogPanel.Visible = false;
+		}
+
 		private void closeButton_Click(object sender, EventArgs e) {
 			Application.Exit();
 		}
@@ -585,6 +599,31 @@ namespace YobaLoncher {
 				}
 				else {
 					changelogBrowser.DocumentText = Program.LoncherSettings.ChangelogHtml;
+				}
+			}
+		}
+
+		private void MainForm_Shown(object sender, EventArgs e) {
+			if (!(Program.FirstRun || Program.OfflineMode)
+					&& Program.LoncherSettings.Survey != null
+					&& YU.stringHasText(Program.LoncherSettings.Survey.Text)
+					&& YU.stringHasText(Program.LoncherSettings.Survey.Url)
+					&& YU.stringHasText(Program.LoncherSettings.Survey.ID)
+					&& (LauncherConfig.LastSurveyId is null || LauncherConfig.LastSurveyId != Program.LoncherSettings.Survey.ID)) {
+				int showSurvey = new Random().Next(0, 100);
+				string discardId = "-0" + Program.LoncherSettings.Survey.ID;
+				bool wasDiscarded = discardId.Equals(LauncherConfig.LastSurveyId);
+				if ((!wasDiscarded && showSurvey > 70) || (showSurvey > 7 && showSurvey < 10)) {
+					DialogResult result = YobaDialog.ShowDialog(Program.LoncherSettings.Survey.Text, YobaDialog.YesNoBtns);
+					if (result == DialogResult.Yes) {
+						Process.Start(Program.LoncherSettings.Survey.Url);
+						LauncherConfig.LastSurveyId = Program.LoncherSettings.Survey.ID;
+						LauncherConfig.Save();
+					}
+					else if (result == DialogResult.No) {
+						LauncherConfig.LastSurveyId = discardId;
+						LauncherConfig.Save();
+					}
 				}
 			}
 		}

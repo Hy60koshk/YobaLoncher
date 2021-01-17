@@ -21,6 +21,7 @@ namespace YobaLoncher {
 		public static bool LaunchFromGalaxy = false;
 		public static bool StartOffline = false;
 		public static bool CloseOnLaunch = false;
+		public static string LastSurveyId = null;
 		public static StartPageEnum StartPage = StartPageEnum.Status;
 		private const string CFGFILE = @"loncherData\loncher.cfg";
 
@@ -32,6 +33,7 @@ namespace YobaLoncher {
 					, "startviagalaxy = " + (LaunchFromGalaxy ? 1 : 0)
 					, "offlinemode = " + (StartOffline ? 1 : 0)
 					, "closeonlaunch = " + (CloseOnLaunch ? 1 : 0)
+					, "lastsrvchk = " + LastSurveyId
 				});
 			}
 			catch (Exception ex) {
@@ -67,6 +69,12 @@ namespace YobaLoncher {
 									if (int.TryParse(vals[1].Trim(), out int intval) && intval > -1 && intval < 4) {
 										StartPage = (StartPageEnum)intval;
 									}
+								}
+							}
+							else if (line.StartsWith("lastsrvchk")) {
+								string[] vals = line.Split('=');
+								if (vals.Length > 1) {
+									LastSurveyId = vals[1].Trim();
 								}
 							}
 							else if (line.StartsWith("startviagalaxy")) {
@@ -108,9 +116,8 @@ namespace YobaLoncher {
 		public string LoncherHash;
 		public string LoncherExe;
 		public StartPageEnum StartPage;
-		public Dictionary<string, string> Dlls;
+		public SurveyInfo Survey;
 		public Dictionary<string, string> Fonts;
-		public string AwesomiumDll;
 		public Image Background;
 		public Image PreloaderBackground;
 		public Icon Icon;
@@ -122,10 +129,11 @@ namespace YobaLoncher {
 			public string GameName;
 			public string SteamGameFolder;
 			public List<GameVersion> GameVersions;
-			public FileInfo Background;
+			public BgImageInfo Background;
 			public FileInfo PreloaderBackground;
 			public FileInfo Localization;
 			public FileInfo Icon;
+			public SurveyInfo Survey;
 			public string ExeName;
 			public StartPageEnum StartPage = StartPageEnum.Status;
 			public string SteamID;
@@ -135,9 +143,8 @@ namespace YobaLoncher {
 			public string ChangelogTemplate;
 			public string LoncherHash;
 			public string LoncherExe;
-			public Dictionary<string, string> Dlls;
-			public string AwesomiumDll;
 			public List<LinkButton> Buttons;
+			public List<RandomBgImageInfo> RandomBackgrounds;
 			public Dictionary<string, UIElement> UI;
 		}
 
@@ -148,7 +155,6 @@ namespace YobaLoncher {
 			wc_ = new WebClient();
 			wc_.Encoding = System.Text.Encoding.UTF8;
 
-			//Files = raw.Files ?? new List<FileInfo>();
 			Buttons = raw.Buttons ?? new List<LinkButton>();
 			foreach (LinkButton btn in Buttons) {
 				if (btn.Position == null)
@@ -156,7 +162,6 @@ namespace YobaLoncher {
 				if (btn.Size == null)
 					btn.Size = new Vector();
 			}
-			//GameVersions = raw.GameVersions;
 
 			StartPage = raw.StartPage;
 			UI = raw.UI ?? new Dictionary<string, UIElement>();
@@ -166,8 +171,7 @@ namespace YobaLoncher {
 			GogID = raw.GogID;
 			LoncherHash = raw.LoncherHash;
 			LoncherExe = raw.LoncherExe;
-			Dlls = raw.Dlls;
-			AwesomiumDll = raw.AwesomiumDll;
+			Survey = raw.Survey;
 
 			GameName = raw.GameName;
 			SteamGameFolder = raw.SteamGameFolder;
@@ -306,6 +310,8 @@ namespace YobaLoncher {
 		public string BorderColor = "gray";
 		public int BorderSize = -1;
 		public BgImageInfo BgImage;
+		public BgImageInfo BgImageClick;
+		public BgImageInfo BgImageHover;
 		public string Caption;
 		public string Font;
 		public string FontSize;
@@ -315,6 +321,11 @@ namespace YobaLoncher {
 		public System.Windows.Forms.DialogResult Result;
 	}
 	class LinkButton : UIElement {
+		public string Url;
+	}
+	class SurveyInfo {
+		public string Text;
+		public string ID;
 		public string Url;
 	}
 	class FileInfo {
@@ -339,6 +350,11 @@ namespace YobaLoncher {
 	}
 	class BgImageInfo : FileInfo {
 		public string Layout;
+		public System.Windows.Forms.ImageLayout ImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+	}
+	class RandomBgImageInfo {
+		public BgImageInfo Background;
+		public int Chance = 100;
 	}
 	class Vector {
 		public int X = 0;

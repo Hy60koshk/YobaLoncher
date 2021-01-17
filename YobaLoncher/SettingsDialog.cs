@@ -1,20 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.WindowsAPICodePack.Dialogs;
+using IWshRuntimeLibrary;
+using IOFile = System.IO.File;
+using System.Runtime.InteropServices;
+using System.IO;
 
 namespace YobaLoncher {
 	class SettingsDialog : YobaDialog {
+		private readonly MainForm mainForm_;
 		private TextBox gamePath;
-		private FolderBrowserDialog folderBrowserDialog1;
 		private YobaComboBox openingPanelCB;
 		private CheckBox launchViaGalaxy;
 		private CheckBox offlineMode;
 		private CheckBox closeLauncherOnLaunch;
+		private CommonOpenFileDialog folderBrowserDialog;
 		//private YobaButton openingPanelCB;
 
 		public string GamePath => gamePath.Text;
@@ -22,9 +26,11 @@ namespace YobaLoncher {
 		public bool LaunchViaGalaxy => launchViaGalaxy.Checked;
 		public bool OfflineMode => offlineMode.Checked;
 		public bool CloseOnLaunch => closeLauncherOnLaunch.Checked;
-		private CommonOpenFileDialog folderBrowserDialog;
 
-		public SettingsDialog() : base(new Size(480, 313), new UIElement[] {
+		[DllImport("user32.dll", CharSet = CharSet.Auto)]
+		extern static bool DestroyIcon(IntPtr handle);
+
+		public SettingsDialog(MainForm mainForm) : base(new Size(480, 360), new UIElement[] {
 			new UIElement() {
 				Caption = Locale.Get("Cancel")
 				, Result = DialogResult.Cancel
@@ -34,11 +40,10 @@ namespace YobaLoncher {
 				, Result = DialogResult.OK
 			}
 		}) {
+			mainForm_ = mainForm;
 			Text = Locale.Get("SettingsTitle");
 
 			SuspendLayout();
-
-			folderBrowserDialog1 = new FolderBrowserDialog();
 
 			folderBrowserDialog = new CommonOpenFileDialog() {
 				IsFolderPicker = true
@@ -140,12 +145,18 @@ namespace YobaLoncher {
 			cbDD.Name = "cbDD";
 			cbDD.Size = new Size(361, openingPanelCB.Height * 3);
 			*/
+			YobaButton createShortcutBtn = new YobaButton();
+			createShortcutBtn.MouseClick += CreateShortcutBtn_MouseClick;
+			createShortcutBtn.Location = new Point(20, 244);
+			createShortcutBtn.Size = new Size(240, 24);
+			createShortcutBtn.Text = Locale.Get("SettingsCreateShortcut");
 
 			gamePath.TabIndex = 1;
 			browseButton.TabIndex = 2;
 			launchViaGalaxy.TabIndex = 3;
 			offlineMode.TabIndex = 4;
 			closeLauncherOnLaunch.TabIndex = 5;
+			createShortcutBtn.TabIndex = 6;
 			openingPanelCB.TabIndex = 10;
 			
 			Controls.Add(fieldBackground);
@@ -154,6 +165,7 @@ namespace YobaLoncher {
 			Controls.Add(offlineMode);
 			Controls.Add(closeLauncherOnLaunch);
 			Controls.Add(openingPanelCB);
+			Controls.Add(createShortcutBtn);
 
 			Controls.Add(openingPanelLabel);
 			Controls.Add(gamePathLabel);
@@ -162,6 +174,44 @@ namespace YobaLoncher {
 				openingPanelCB.SelectedIndex = (int)LauncherConfig.StartPage;
 			});
 			ResumeLayout();
+		}
+
+		private void CreateShortcutBtn_MouseClick(object sender, MouseEventArgs e) {
+			try {
+				string filename = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\Запускатр Боевых Братьев.lnk";
+				if (!IOFile.Exists(filename)) {
+					WshShell wsh = new WshShell();
+					IWshShortcut shortcut = wsh.CreateShortcut(filename) as IWshShortcut;
+					shortcut.Arguments = "";
+					shortcut.TargetPath = Application.ExecutablePath;
+					shortcut.WorkingDirectory = Program.LoncherPath;
+					shortcut.WindowStyle = 1;
+					string iconFile = Program.LoncherDataPath + "shortcutIcon.ico";
+					bool validIconFile = IOFile.Exists(iconFile);
+					if (!validIconFile) {
+						string exename = Program.GamePath + Program.LoncherSettings.ExeName;
+
+						if (IOFile.Exists(PreloaderForm.ICON_FILE)) {
+							PngIconConverter.Convert(PreloaderForm.ICON_FILE, iconFile);
+							validIconFile = true;
+						}
+						else if (IOFile.Exists(exename) && exename.EndsWith(".exe")) {
+							Icon exeIcon = Icon.ExtractAssociatedIcon(exename);
+							if (exeIcon != null) {
+								Bitmap exeBmp = exeIcon.ToBitmap();
+								PngIconConverter.Convert(exeBmp, iconFile);
+								validIconFile = true;
+							}
+						}
+					}
+					if (validIconFile) {
+						shortcut.IconLocation = iconFile;
+					}
+					shortcut.Save();
+				}
+			} catch (Exception ex) {
+				YobaDialog.ShowDialog(ex.Message);
+			}
 		}
 
 		private void browseButton_Click(object sender, EventArgs e) {

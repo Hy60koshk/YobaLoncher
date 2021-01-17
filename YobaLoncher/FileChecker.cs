@@ -40,7 +40,7 @@ namespace YobaLoncher {
 		public static async Task<CheckResult> CheckFiles(string root, List<FileInfo> files, EventHandler<FileCheckedEventArgs> checkEventHandler) {
 			CheckResult result = new CheckResult();
 			foreach (FileInfo file in files) {
-				if (!(file.IsOK = CheckFileMD5(root, file))) {
+				if (!(file.IsOK = CheckFileMD5(root, file)) && YU.stringHasText(file.Url)) {
 					result.InvalidFiles.AddLast(file);
 					result.IsAllOk = false;
 					WebRequest webRequest = WebRequest.Create(file.Url);
@@ -61,13 +61,22 @@ namespace YobaLoncher {
 				if (!(file.IsOK = CheckFileMD5(Program.GamePath, file))) {
 					result.InvalidFiles.AddLast(file);
 					result.IsAllOk = false;
-					WebRequest webRequest = WebRequest.Create(file.Url);
-					webRequest.Method = "HEAD";
 				}
 			}
 			return result;
 		}
 
+		public static string GetFileMD5(string path) {
+			byte[] hash;
+			using (FileStream stream = File.OpenRead(path)) {
+				hash = MD5.ComputeHash(stream);
+			}
+			StringBuilder hashSB = new StringBuilder(hash.Length);
+			for (int i = 0; i < hash.Length; i++) {
+				hashSB.Append(hash[i].ToString("X2"));
+			}
+			return hashSB.ToString();
+		}
 		public static bool CheckFileMD5(FileInfo file) {
 			return CheckFileMD5(Program.GamePath, file);
 		}
@@ -84,15 +93,7 @@ namespace YobaLoncher {
 				if (file.Hashes == null || file.Hashes.Count == 0) {
 					return true;
 				}
-				byte[] hash;
-				using (FileStream stream = File.OpenRead(filepath)) {
-					hash = MD5.ComputeHash(stream);
-				}
-				StringBuilder hashSB = new StringBuilder(hash.Length);
-				for (int i = 0; i < hash.Length; i++) {
-					hashSB.Append(hash[i].ToString("X2"));
-				}
-				string strHash = hashSB.ToString();
+				string strHash = GetFileMD5(filepath);
 				foreach (string correctHash in file.Hashes) {
 					if (correctHash == null || correctHash.Length == 0
 						|| correctHash.ToUpper().Equals(strHash)) {
@@ -108,15 +109,7 @@ namespace YobaLoncher {
 				if (correctHash is null || correctHash.Length == 0) {
 					return true;
 				}
-				byte[] hash;
-				using (FileStream stream = File.OpenRead(path)) {
-					hash = MD5.ComputeHash(stream);
-				}
-				StringBuilder hashSB = new StringBuilder(hash.Length);
-				for (int i = 0; i < hash.Length; i++) {
-					hashSB.Append(hash[i].ToString("X2"));
-				}
-				string strHash = hashSB.ToString();
+				string strHash = GetFileMD5(path);
 				if (correctHash.ToUpper().Equals(strHash)) {
 					return true;
 				}

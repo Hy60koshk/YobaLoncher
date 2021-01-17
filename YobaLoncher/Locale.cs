@@ -104,6 +104,7 @@ namespace YobaLoncher {
 			, { "SettingsCloseOnLaunch", "Close the Loncher when game starts" }
 			, { "SettingsOfflineMode", "Offline mode" }
 			, { "SettingsOfflineModeTooltip", "Offline mode" }
+			, { "SettingsCreateShortcut", "Put shortcut on Desktop" }
 			, { "OfflineModeSet", "Launcher set to run in offline mode. Restart now?" }
 			, { "OnlineModeSet", "Launcher set to run in online mode. Restart now?" }
 			, { "GamePathSelectionTitle", "Select the game folder" }
@@ -126,7 +127,8 @@ namespace YobaLoncher {
 			, { "CannotParseSettings", "Cannot parse the Settings file" }
 			, { "CannotUpdateLoncher", "Cannot update the Löncher" }
 			, { "LoncherOutOfDate1", "Launcher is out of date.\r\n\r\nAdmin eblan ne polozhil the link for autoupdate,\r\nPoetomu we will just ne dadim zapustit the Launcher." }
-			, { "LoncherOutOfDate2", "New Launcher is still out of date.\r\n\r\nAdmin eblan did not update either the link or the launcher executable download link.\r\nPoetomu we will just ne dadim zapustit the Launcher, mamke admina privet." }
+			, { "LoncherOutOfDate2", "New Launcher hash mathes the old one and doesn't match the required one.\r\n\r\nAdmin eblan did not update either the link or the launcher executable download link.\r\nPoetomu we will just ne dadim zapustit the Launcher, mamke admina privet." }
+			, { "LoncherOutOfDate3", "Launcher versions consider each other as a newer ones.\r\n\r\nClosing the app to prevent endless update loop." }
 			, { "WebClientError", "Couldn't get settings for the Löncher.\r\nProbably, you're out of Ethernet." }
 			, { "WebClientErrorOffline", "Couldn't get settings for the Löncher.\r\nProbably, you're out of Ethernet.\r\n\r\nShall we try to connect again, or make an attempt to start the louncher in offline mode?" }
 			, { "FileCheckNoFilePath", "No file path provided.\r\nContact the guy who set the launcher up." }

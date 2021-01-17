@@ -26,9 +26,10 @@ namespace YobaLoncher {
 
 		internal static UIElement[] YesNoBtns = new UIElement[] {
 			new UIElement() {
-				Caption = Locale.Get("No"), Result = DialogResult.No
-			}, new UIElement() {
 				Caption = Locale.Get("Yes"), Result = DialogResult.Yes
+			},
+			new UIElement() {
+				Caption = Locale.Get("No"), Result = DialogResult.No
 			}
 		};
 
@@ -37,16 +38,14 @@ namespace YobaLoncher {
 		public YobaDialog() : this("", null) { }
 		public YobaDialog(string message) : this(message, null) { }
 		internal YobaDialog(string message, UIElement[] buttons) {
-			startInit();
-			messageLabel.Text = message;
+			startInit(message);
 			initButtons(buttons);
 		}
 		internal YobaDialog(Size size) : this("", size, null) { }
 		internal YobaDialog(string message, Size size) : this(message, size, null) { }
 		internal YobaDialog(Size size, UIElement[] buttons) : this("", size, buttons) { }
 		internal YobaDialog(string message, Size size, UIElement[] buttons) {
-			startInit();
-			messageLabel.Text = message;
+			startInit(message);
 			Size = size;
 			MinimumSize = size;
 			MaximumSize = size;
@@ -59,12 +58,22 @@ namespace YobaLoncher {
 			NativeWinAPI.SetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE, _originalWinStyle);
 		}
 
-		private void startInit() {
+		private void startInit(string message) {
 			InitializeComponent();
 			_originalWinStyle = NativeWinAPI.GetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE);
 			NativeWinAPI.SetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE, _originalWinStyle | NativeWinAPI.WS_EX_COMPOSITED);
 
 			Icon = Program.LoncherSettings != null ? (Program.LoncherSettings.Icon ?? Resource1.yIcon) : Resource1.yIcon;
+			messageLabel.Text = message;
+			if (message.Length > 200) {
+				int height = Size.Height + (Size.Height - 90) * ((message.Length - message.Length % 200) / 200);
+				int width = Size.Width;
+				if (height > 400) {
+					height = 400;
+					width = 640;
+				}
+				Size = new Size(width, height);
+			}
 			MinimumSize = Size;
 			MaximumSize = Size;
 		}
@@ -158,6 +167,10 @@ namespace YobaLoncher {
 				return false;
 			}
 		}
+
+		protected UIElement StyleInfo = null;
+		protected bool MouseHoverState = false;
+
 		public YobaButtonAbs() : base() {
 			BackColor = BtnColors.Back;
 			ForeColor = BtnColors.Fore;
@@ -172,6 +185,7 @@ namespace YobaLoncher {
 		}
 
 		public virtual void ApplyUIStyles(UIElement styleInfo) {
+			StyleInfo = styleInfo;
 			UseVisualStyleBackColor = true;
 			if (styleInfo.Position != null) {
 				Location = new Point(styleInfo.Position.X, styleInfo.Position.Y);
@@ -188,18 +202,60 @@ namespace YobaLoncher {
 				FlatAppearance.BorderColor = YU.colorFromString(styleInfo.BorderColor, BtnColors.Border);
 			}
 			if (styleInfo.BgImage != null && YU.stringHasText(styleInfo.BgImage.Path)) {
+				styleInfo.BgImage.ImageLayout = ImageLayout.Stretch;
 				if (YU.stringHasText(styleInfo.BgImage.Layout)) {
-					try {
-						Enum.Parse(typeof(ImageLayout), styleInfo.BgImage.Layout);
-					}
-					catch {
-						BackgroundImageLayout = ImageLayout.Stretch;
+					if (Enum.TryParse(styleInfo.BgImage.Layout, out ImageLayout layout)) {
+						styleInfo.BgImage.ImageLayout = layout;
 					}
 				}
-				else {
-					BackgroundImageLayout = ImageLayout.Stretch;
-				}
+				BackgroundImageLayout = styleInfo.BgImage.ImageLayout;
 				BackgroundImage = YU.readBitmap(PreloaderForm.IMGPATH + styleInfo.BgImage.Path);
+
+				if (styleInfo.BgImageClick != null && YU.stringHasText(styleInfo.BgImageClick.Path)) {
+					styleInfo.BgImageClick.ImageLayout = ImageLayout.Stretch;
+					if (YU.stringHasText(styleInfo.BgImageClick.Layout)) {
+						if (Enum.TryParse(styleInfo.BgImageClick.Layout, out ImageLayout layout)) {
+							styleInfo.BgImageClick.ImageLayout = layout;
+						}
+					}
+					MouseDown += YobaButtonAbs_MouseDownBGChange;
+					MouseUp += YobaButtonAbs_MouseUpBGChange;
+				}
+				if (styleInfo.BgImageHover != null && YU.stringHasText(styleInfo.BgImageHover.Path)) {
+					styleInfo.BgImageHover.ImageLayout = ImageLayout.Stretch;
+					if (YU.stringHasText(styleInfo.BgImageHover.Layout)) {
+						if (Enum.TryParse(styleInfo.BgImageHover.Layout, out ImageLayout layout)) {
+							styleInfo.BgImageHover.ImageLayout = layout;
+						}
+					}
+					MouseEnter += YobaButtonAbs_MouseHoverBGChange;
+					MouseLeave += YobaButtonAbs_MouseLeaveBGChange;
+				}
+			}
+		}
+
+		private void YobaButtonAbs_MouseLeaveBGChange(object sender, EventArgs e) {
+			MouseHoverState = false;
+			BackgroundImageLayout = StyleInfo.BgImage.ImageLayout;
+			BackgroundImage = YU.readBitmap(PreloaderForm.IMGPATH + StyleInfo.BgImage.Path);
+		}
+		private void YobaButtonAbs_MouseHoverBGChange(object sender, EventArgs e) {
+			MouseHoverState = true;
+			BackgroundImageLayout = StyleInfo.BgImageHover.ImageLayout;
+			BackgroundImage = YU.readBitmap(PreloaderForm.IMGPATH + StyleInfo.BgImageHover.Path);
+		}
+		private void YobaButtonAbs_MouseDownBGChange(object sender, EventArgs e) {
+			BackgroundImageLayout = StyleInfo.BgImageClick.ImageLayout;
+			BackgroundImage = YU.readBitmap(PreloaderForm.IMGPATH + StyleInfo.BgImageClick.Path);
+		}
+		private void YobaButtonAbs_MouseUpBGChange(object sender, EventArgs e) {
+			if (MouseHoverState) {
+				BackgroundImageLayout = StyleInfo.BgImageHover.ImageLayout;
+				BackgroundImage = YU.readBitmap(PreloaderForm.IMGPATH + StyleInfo.BgImageHover.Path);
+			}
+			else {
+				BackgroundImageLayout = StyleInfo.BgImage.ImageLayout;
+				BackgroundImage = YU.readBitmap(PreloaderForm.IMGPATH + StyleInfo.BgImage.Path);
 			}
 		}
 	}
