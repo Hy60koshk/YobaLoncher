@@ -10,11 +10,10 @@ The current version is just a backup. No documentation will be provided until a 
 - CuStOm DeSiGn
 - Localization files
 - Offline mode (or, more like, diagnostic mode, since the only function the loncher will serve then is the filecheck)
+- File backup
 
 **TODO:**
-- File check summary and the ability to deselect the optional files
 - Git: settings sample
-- Better folder selection dialog
 
 **Dev Requirements:**
 They're not included, yet to build the launcher you'd need:
