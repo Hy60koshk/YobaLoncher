@@ -26,6 +26,7 @@ namespace YobaLoncher {
 		private DownloadProgressTracker downloadProgressTracker_;
 		public string ThePath = "";
 		private LinkedList<FileInfo> filesToUpload_;
+		private LinkedList<FileInfo> modsToUpload_;
 		private LinkedListNode<FileInfo> currentFile_ = null;
 		private bool ReadyToGo_ = false;
 
@@ -70,6 +71,81 @@ namespace YobaLoncher {
 			}
 		}
 
+		[ComVisible(true)]
+		public class ModsController {
+			public class SFileInfo {
+				public string Title;
+				public bool IsOk = false;
+
+				public SFileInfo(string title, bool isok) {
+					Title = title;
+					IsOk = isok;
+				}
+			}
+
+			private static ModsController _instance = null;
+			internal MainForm Form = null;
+			internal Dictionary<string, ModInfo> ModMap;
+
+			public async Task InstallModAsync(string id) {
+				ModInfo mi = ModMap[id];
+				uint size = 0;
+				if (mi.CurrentVersion[0].Size == 0) {
+					await FileChecker.CheckFiles(mi.CurrentVersion);
+				}
+				foreach (FileInfo fi in mi.CurrentVersion) {
+					if (!fi.IsOK) {
+						size += fi.Size;
+					}
+				}
+				if (DialogResult.Yes == YobaDialog.ShowDialog(String.Format(Locale.Get("AreYouSureInstallMod"), mi.Name, size), YobaDialog.YesNoBtns)) {
+					if (Form.modsToUpload_ is null) {
+						Form.modsToUpload_ = new LinkedList<FileInfo>(mi.CurrentVersion);
+					}
+					else {
+						foreach (FileInfo fi in mi.CurrentVersion) {
+							Form.modsToUpload_.AddLast(fi);
+						}
+					}
+					mi.DlInProgress = true;
+					Form.UpdateModsWebView();
+					Form.StartDownloadMods();
+				}
+			}
+			public void UninstallMod(string id) {
+				ModInfo mi = ModMap[id];
+				if (DialogResult.Yes == YobaDialog.ShowDialog(String.Format(Locale.Get("AreYouSureUninstallMod"), mi.Name), YobaDialog.YesNoBtns)) {
+					mi.Delete();
+					Form.UpdateModsWebView();
+				}
+			}
+			public void DisableMod(string id) {
+				ModInfo mi = ModMap[id];
+				mi.Disable();
+				Form.UpdateModsWebView();
+			}
+			public void EnableMod(string id) {
+				ModInfo mi = ModMap[id];
+				foreach (FileInfo fi in mi.CurrentVersion) {
+					if (!File.Exists(Program.GamePath + fi.Path)) {
+						YobaDialog.ShowDialog(String.Format(Locale.Get("CannotEnableMod"), mi.Name));
+						return;
+					}
+				}
+				mi.Enable();
+				Form.UpdateModsWebView();
+			}
+
+			public static ModsController Instance {
+				get {
+					if (_instance is null) {
+						_instance = new ModsController();
+					}
+					return _instance;
+				}
+			}
+		}
+
 		public MainForm() {
 			ThePath = Program.GamePath;
 
@@ -104,6 +180,7 @@ namespace YobaLoncher {
 			linksButton.Text = Locale.Get("LinksBtn");
 			settingsButton.Text = Locale.Get("SettingsBtn");
 			statusButton.Text = Locale.Get("StatusBtn");
+			modsButton.Text = Locale.Get("ModsBtn");
 			Text = Locale.Get("MainFormTitle");
 
 			theToolTip.SetToolTip(closeButton, Locale.Get("Close"));
@@ -139,16 +216,17 @@ namespace YobaLoncher {
 				}
 			}
 
-			statusBowser.Size = new Size(610, 330);
-			statusBowser.Location = new Point(0, 0);
+			statusBrowser.Size = new Size(610, 330);
+			statusBrowser.Location = new Point(0, 0);
 			modsBrowser.Size = new Size(610, 330);
 			modsBrowser.Location = new Point(0, 0);
 
-			statusBowser.ObjectForScripting = StatusController.Instance;
+			statusBrowser.ObjectForScripting = StatusController.Instance;
 			StatusController.Instance.Form = this;
 			StatusController.Instance.FileMap = new Dictionary<string, FileInfo>();
 
 			UpdateStatusWebView();
+			UpdateModsWebView();
 
 			if (Program.LoncherSettings.UI.ContainsKey("UpdateLabel")) {
 				UIElement updateLabelInfo = Program.LoncherSettings.UI["UpdateLabel"];
@@ -324,7 +402,44 @@ namespace YobaLoncher {
 				.Replace("[[[DOWNLOADFORCED]]]", Locale.Get("StatusComboboxDownloadForced"))
 				.Replace("[[[NOUPDATE]]]", Locale.Get("StatusComboboxNoUpdate"))
 				.Replace("[[[STATUS]]]", statusSb.ToString());
-			statusBowser.DocumentText = template; //Program.LoncherSettings.ChangelogHtml;//"data:text/html;charset=UTF-8," + 
+			statusBrowser.DocumentText = template; //Program.LoncherSettings.ChangelogHtml;//"data:text/html;charset=UTF-8," + 
+		}
+
+		private void UpdateModsWebView() {
+			StringBuilder statusSb = new StringBuilder();
+			ModsController.Instance.ModMap = new Dictionary<string, ModInfo>();
+			int finum = 0;
+
+			foreach (ModInfo mi in Program.LoncherSettings.Mods) {
+				if (mi.CurrentVersion != null) {
+					string id = "modId" + finum++;
+					ModsController.Instance.ModMap[id] = mi;
+					string buttons;
+					statusSb.Append("<div class='modEntry");
+					if (mi.CfgInfo is null) {
+						buttons = String.Format("<div class='btn install'>{0}</div>", Locale.Get("InstallMod"));
+					}
+					else {
+						statusSb.Append(" active");
+						buttons = String.Format("<div class='btn disable'>{0}</div><div class='btn uninstall'>{1}</div>"
+							, Locale.Get("DisableMod"), Locale.Get("UninstallMod"));
+					}
+					statusSb.Append("' id='").Append(id).Append("'><div class='modTitle'>").Append(mi.Name)
+							.Append("</div><div class='modDesc'>").Append(mi.Description)
+							.Append("</div><div class='modControls'>").Append(buttons).Append("</div></div>");
+				}
+			}
+			if (finum == 0) {
+				statusSb.Append("<div class='noMods'>").Append(Locale.Get("NoModsForThisVersion")).Append("</div>");
+			}
+			string template = Resource1.mods_template/*.Replace("[[[DOWNLOAD]]]", Locale.Get("StatusComboboxDownload"))
+				.Replace("[[[NODOWNLOAD]]]", Locale.Get("StatusComboboxNoDownload"))
+				.Replace("[[[UPDATE]]]", Locale.Get("StatusComboboxUpdate"))
+				.Replace("[[[UPDATEFORCED]]]", Locale.Get("StatusComboboxUpdateForced"))
+				.Replace("[[[DOWNLOADFORCED]]]", Locale.Get("StatusComboboxDownloadForced"))
+				.Replace("[[[NOUPDATE]]]", Locale.Get("StatusComboboxNoUpdate"))*/
+				.Replace("[[[MODS]]]", statusSb.ToString());
+			modsBrowser.DocumentText = template;
 		}
 
 		private async void DownloadFile(FileInfo fileInfo) {
@@ -386,6 +501,10 @@ namespace YobaLoncher {
 		}
 
 		private void DownloadNext() {
+			if (modsToUpload_ != null) {
+				DownloadNextMod();
+				return;
+			}
 			do {
 				currentFile_ = currentFile_.Next;
 			}
@@ -403,20 +522,13 @@ namespace YobaLoncher {
 						if (!fileInfo.IsCheckedToDl) {
 							continue;
 						}
-						filename = fileInfo.Path;
-						String[] pathparts = filename.Split('/');
-						string dirpath = ThePath;
-						for (int j = 0; j < pathparts.Length - 1; j++) {
-							dirpath = dirpath + pathparts[j];
-							if (!Directory.Exists(dirpath)) {
-								Directory.CreateDirectory(dirpath);
-							}
-							dirpath += "\\";
+						filename = ThePath + fileInfo.Path.Replace('/', '\\');
+						string dirpath = filename.Substring(0, filename.LastIndexOf('\\'));
+						Directory.CreateDirectory(dirpath);
+						if (File.Exists(filename)) {
+							File.Delete(filename);
 						}
-						if (File.Exists(ThePath + fileInfo.Path)) {
-							File.Delete(ThePath + fileInfo.Path);
-						}
-						File.Move(PreloaderForm.UPDPATH + fileInfo.UploadAlias, ThePath + fileInfo.Path);
+						File.Move(PreloaderForm.UPDPATH + fileInfo.UploadAlias, filename);
 						fileInfo.IsOK = true;
 						fileInfo.IsPresent = true;
 					}
@@ -486,7 +598,7 @@ namespace YobaLoncher {
 				launch();
 			}
 			else {
-				HtmlElement statusList = statusBowser.Document.GetElementById("articleContent");
+				HtmlElement statusList = statusBrowser.Document.GetElementById("articleContent");
 				statusListClass_ = statusList.GetAttribute("class");
 				statusList.SetAttribute("class", statusListClass_ + " disabled");
 				launchGameButton.Enabled = false;
@@ -545,6 +657,7 @@ namespace YobaLoncher {
 					}
 				}
 			}
+			this.Focus();
 		}
 
 		private void changelogMenuBtn_Click(object sender, EventArgs e) {

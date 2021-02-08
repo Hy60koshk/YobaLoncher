@@ -61,7 +61,7 @@ namespace YobaLoncher {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на 11.11.2020T16:50:23,27 
+        ///   Ищет локализованную строку, похожую на 01.02.2021T11:19:02,02 
         ///.
         /// </summary>
         internal static string BuildDate {
@@ -73,7 +73,7 @@ namespace YobaLoncher {
         /// <summary>
         ///   Ищет локализованную строку, похожую на BBLoncher
         ///---========---
-        ///1.0.5
+        ///1.2.0
         ///---========---
         ///BBLöncher {2} (YL v.{0}-{1})
         ///
@@ -83,8 +83,7 @@ namespace YobaLoncher {
         ///---========---
         ///
         ///Через приложение BBLoncher мы не собираем совершенно никакой информации о пользователях.
-        ///Все взаимодействия с сетью осуществляются только для получения от сервера информации, необходимой для работы лаунчера, и для скачивания обновлений игры и модов к ней. Наружу ничего не отправляется, даже информация о состоянии самого лаунчера.
-        /// [остаток строки не уместился]&quot;;.
+        ///Все взаимодействия с сетью осуществляются только для получения от сервера информации, необходимой для работы лаунчера, и для скачивания обновлений русификатора игры и других модов к ней, а также обновления некоторых файлов игры при необходимост [остаток строки не уместился]&quot;;.
         /// </summary>
         internal static string BuildTargetOpts {
             get {
@@ -145,6 +144,33 @@ namespace YobaLoncher {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на 
+        ///&lt;!DOCTYPE html&gt;
+        ///&lt;html&gt;
+        ///&lt;head&gt;
+        ///&lt;meta http-equiv=&apos;Content-Type&apos; content=&apos;text/html; charset=UTF-8&apos; /&gt;
+        ///&lt;meta http-equiv=&quot;X-UA-Compatible&quot; content=&quot;IE=11&quot; /&gt; 
+        ///&lt;title&gt;Yoba Löncher&lt;/title&gt;
+        ///
+        ///&lt;script&gt;
+        ///
+        ///var elementPrototype = typeof HTMLElement !== &quot;undefined&quot; ? HTMLElement.prototype : Element.prototype;
+        ///
+        ///elementPrototype.appendTo = function(parent) {
+        ///	parent.appendChild(this);
+        ///	return this
+        ///};
+        ///elementPrototype.prependTo = function(parent) {
+        ///	if (parent.firstChild) {
+        ///		parent.insertBefore(this, par [остаток строки не уместился]&quot;;.
+        /// </summary>
+        internal static string mods_template {
+            get {
+                return ResourceManager.GetString("mods_template", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap red_dot {
@@ -159,18 +185,21 @@ namespace YobaLoncher {
         ///&lt;!DOCTYPE html&gt;
         ///&lt;html&gt;
         ///&lt;head&gt;
-        ///    &lt;meta http-equiv=&apos;Content-Type&apos; content=&apos;text/html; charset=UTF-8&apos; /&gt;
-        ///    &lt;meta http-equiv=&quot;X-UA-Compatible&quot; content=&quot;IE=11&quot; /&gt;
-        ///    &lt;title&gt;Yoba Löncher&lt;/title&gt;
+        ///&lt;meta http-equiv=&apos;Content-Type&apos; content=&apos;text/html; charset=UTF-8&apos; /&gt;
+        ///&lt;meta http-equiv=&quot;X-UA-Compatible&quot; content=&quot;IE=11&quot; /&gt; 
+        ///&lt;title&gt;Yoba Löncher&lt;/title&gt;
         ///
-        ///    &lt;script&gt;
-        ///        /*var indexraw = &apos;[[[CHANGELOG]]]&apos;;
+        ///&lt;script&gt;
         ///
-        ///        var index = [];
-        ///        var indesplit = indexraw.split(&apos;=====|=|=|=====&apos;);
-        ///        for (var i = 0; i &lt; indesplit.length; i++) {
-        ///        var pair = indesplit[i].split(&apos;=====Content=====&apos;);
-        ///        index.push({ Title: pair[0], Content: p [остаток строки не уместился]&quot;;.
+        ///var elementPrototype = typeof HTMLElement !== &quot;undefined&quot; ? HTMLElement.prototype : Element.prototype;
+        ///
+        ///elementPrototype.appendTo = function(parent) {
+        ///	parent.appendChild(this);
+        ///	return this
+        ///};
+        ///elementPrototype.prependTo = function(parent) {
+        ///	if (parent.firstChild) {
+        ///		parent.insertBefore(this, par [остаток строки не уместился]&quot;;.
         /// </summary>
         internal static string status_template {
             get {

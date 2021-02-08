@@ -50,8 +50,8 @@ namespace YobaLoncher {
 						string fileSize = webResponse.Headers.Get("Content-Length");
 						file.Size = Convert.ToUInt32(fileSize);
 					}
-					checkEventHandler?.Invoke(null, new FileCheckedEventArgs(file));
 				}
+				checkEventHandler?.Invoke(null, new FileCheckedEventArgs(file));
 			}
 			return result;
 		}

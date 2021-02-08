@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -254,8 +255,55 @@ namespace YobaLoncher {
 		}
 
 		private void updateGameVersion() {
-			string curVer = FileVersionInfo.GetVersionInfo(Program.GamePath + Program.LoncherSettings.ExeName).FileVersion.Replace(',', '.');
+			string curVer = "1.4.0.47";//FileVersionInfo.GetVersionInfo(Program.GamePath + Program.LoncherSettings.ExeName).FileVersion.Replace(',', '.');
+			Program.GameVersion = curVer;
 			Program.LoncherSettings.LoadFileListForVersion(curVer);
+			/*List<string> am = LauncherConfig.ActiveMods;
+			List<string> disabled = new List<string>();
+			foreach (ModInfo mi in Program.LoncherSettings.Mods) {
+				if (am.Contains(mi.Name)) {
+					if (mi.CurrentVersion is null) {
+						disabled.Add(mi.Name);
+					}
+					else {
+						mi.Active = true;
+					}
+				}
+			}
+			if (disabled.Count > 0) {
+				YobaDialog.ShowDialog(String.Format(Locale.Get("FollowingModsAreDisabled"), String.Join(", ", disabled)));
+			}*/
+			Program.ModsDisabledPath = Program.GamePath + "_loncher_disabled_mods\\";
+
+			/*if (Directory.Exists(bkpPath)) {
+				disabled.Clear();
+				List<ModInfo> availableMI = new List<ModInfo>();
+				foreach (ModInfo mi in Program.LoncherSettings.Mods) {
+					if (mi.CfgInfo != null) {
+						if (Directory.Exists(bkpPath + mi.Name)) {
+							disabled.Add(mi.Name);
+							availableMI.Add(mi);
+						}
+					}
+				}
+				if (disabled.Count > 0) {
+					string msg = String.Format(Locale.Get("FollowingModsMayBeEnabled"), String.Join(", ", disabled));
+					if (DialogResult.Yes == YobaDialog.ShowDialog(msg, YobaDialog.YesNoBtns)) {
+						foreach (ModInfo mi in availableMI) {
+							string modPath = bkpPath + mi.Name + '\\';
+							foreach (FileInfo fi in mi.CurrentVersion) {
+								if (File.Exists(modPath + fi.Path)) {
+									File.Move(modPath + fi.Path, Program.GamePath + fi.Path);
+								}
+							}
+							Directory.Delete(modPath);
+						}
+						if (Directory.GetDirectories(bkpPath).Length == 0) {
+							Directory.Delete(bkpPath);
+						}
+					}
+				}
+			}*/
 		}
 
 		private void showMainForm() {
@@ -276,6 +324,7 @@ namespace YobaLoncher {
 				Initialize();
 			}
 		}
+
 		private async void Initialize() {
 			_progressBar1.Value = 0;
 			Program.OfflineMode = false;
@@ -287,10 +336,6 @@ namespace YobaLoncher {
 				lastTicks = current;
 			}
 			try {
-				if (!Directory.Exists("loncherData")) {
-					Program.FirstRun = true;
-					Directory.CreateDirectory("loncherData");
-				}
 				if (!Directory.Exists(IMGPATH)) {
 					Directory.CreateDirectory(IMGPATH);
 				}
@@ -504,24 +549,40 @@ namespace YobaLoncher {
 									if (oldMainForm_ != null) {
 										oldMainForm_.Dispose();
 									}
-									int progressBarPerFile = 94 - _progressBar1.Value;
+									int progressBarPerFile = 100 - _progressBar1.Value;
 									if (progressBarPerFile < Program.LoncherSettings.Files.Count) {
 										progressBarPerFile = 88;
 										_progressBar1.Value = 6;
+
 									}
 									progressBarPerFile = progressBarPerFile / Program.LoncherSettings.Files.Count;
 									if (progressBarPerFile < 1) {
 										progressBarPerFile = 1;
 									}
+
 									Program.GameFileCheckResult = await FileChecker.CheckFiles(
 										Program.LoncherSettings.Files
 										, new EventHandler<FileCheckedEventArgs>((object o, FileCheckedEventArgs a) => {
 											_progressBar1.Value += progressBarPerFile;
-											if (_progressBar1.Value > 96) {
+											if (_progressBar1.Value > 100) {
 												_progressBar1.Value = 40;
 											}
 										})
 									);
+
+									foreach (ModInfo mi in Program.LoncherSettings.Mods) {
+										if (mi.CfgInfo != null) {
+											await FileChecker.CheckFiles(
+												mi.CurrentVersion
+												, new EventHandler<FileCheckedEventArgs>((object o, FileCheckedEventArgs a) => {
+													_progressBar1.Value += progressBarPerFile;
+													if (_progressBar1.Value > 100) {
+														_progressBar1.Value = 40;
+													}
+												})
+											);
+										}
+									}
 									logDeltaTicks("filecheck");
 									showMainForm();
 								}

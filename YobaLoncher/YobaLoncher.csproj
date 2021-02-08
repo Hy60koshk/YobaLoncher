@@ -104,6 +104,9 @@
     </Compile>
     <Compile Include="LauncherData.cs" />
     <Compile Include="Locale.cs" />
+    <Compile Include="MainForm.Mods.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="PngIconConverter.cs" />
     <Compile Include="PreloaderForm.cs">
       <SubType>Form</SubType>

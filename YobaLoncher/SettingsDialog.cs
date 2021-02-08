@@ -30,7 +30,7 @@ namespace YobaLoncher {
 		[DllImport("user32.dll", CharSet = CharSet.Auto)]
 		extern static bool DestroyIcon(IntPtr handle);
 
-		public SettingsDialog(MainForm mainForm) : base(new Size(480, 360), new UIElement[] {
+		public SettingsDialog(MainForm mainForm) : base(new Size(480, 460), new UIElement[] {
 			new UIElement() {
 				Caption = Locale.Get("Cancel")
 				, Result = DialogResult.Cancel
@@ -145,9 +145,15 @@ namespace YobaLoncher {
 			cbDD.Name = "cbDD";
 			cbDD.Size = new Size(361, openingPanelCB.Height * 3);
 			*/
+			YobaButton makeBackupBtn = new YobaButton();
+			makeBackupBtn.MouseClick += MakeBackupBtn_MouseClick;
+			makeBackupBtn.Location = new Point(20, 246);
+			makeBackupBtn.Size = new Size(240, 24);
+			makeBackupBtn.Text = Locale.Get("SettingsMakeBackup");
+
 			YobaButton createShortcutBtn = new YobaButton();
 			createShortcutBtn.MouseClick += CreateShortcutBtn_MouseClick;
-			createShortcutBtn.Location = new Point(20, 244);
+			createShortcutBtn.Location = new Point(20, 286);
 			createShortcutBtn.Size = new Size(240, 24);
 			createShortcutBtn.Text = Locale.Get("SettingsCreateShortcut");
 
@@ -156,15 +162,18 @@ namespace YobaLoncher {
 			launchViaGalaxy.TabIndex = 3;
 			offlineMode.TabIndex = 4;
 			closeLauncherOnLaunch.TabIndex = 5;
-			createShortcutBtn.TabIndex = 6;
-			openingPanelCB.TabIndex = 10;
 			
+			openingPanelCB.TabIndex = 10;
+			makeBackupBtn.TabIndex = 15;
+			createShortcutBtn.TabIndex = 16;
+
 			Controls.Add(fieldBackground);
 			Controls.Add(browseButton);
 			Controls.Add(launchViaGalaxy);
 			Controls.Add(offlineMode);
 			Controls.Add(closeLauncherOnLaunch);
 			Controls.Add(openingPanelCB);
+			Controls.Add(makeBackupBtn);
 			Controls.Add(createShortcutBtn);
 
 			Controls.Add(openingPanelLabel);
@@ -211,6 +220,51 @@ namespace YobaLoncher {
 				}
 			} catch (Exception ex) {
 				YobaDialog.ShowDialog(ex.Message);
+			}
+		}
+
+		private void MakeBackupBtn_MouseClick(object sender, MouseEventArgs e) {
+			string bkpdir = Program.GamePath + "_loncher_backups\\" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + "\\";
+			if (DialogResult.Yes == YobaDialog.ShowDialog(String.Format(Locale.Get("SettingsMakeBackupInfo"), bkpdir), YesNoBtns)) {
+				try {
+					string origDir = Program.GamePath;
+					if (!Directory.Exists(bkpdir)) {
+						Directory.CreateDirectory(bkpdir);
+					}
+
+					List<string> dirs = new List<string>();
+
+					void backupFile(FileInfo fi) {
+						string path = fi.Path.Replace('/', '\\');
+						int fileNameStart = path.LastIndexOf('\\');
+						if (fileNameStart > 0) {
+							string dir = path.Substring(0, fileNameStart);
+							if (!dirs.Contains(dir)) {
+								if (!Directory.Exists(bkpdir + dir)) {
+									Directory.CreateDirectory(bkpdir + dir);
+								}
+								dirs.Add(dir);
+							}
+						}
+						if (IOFile.Exists(origDir + path)) {
+							IOFile.Copy(origDir + path, bkpdir + path);
+						}
+					}
+
+					GameVersion gameVersion = Program.LoncherSettings.GameVersion;
+					foreach (FileGroup fg in gameVersion.FileGroups) {
+						foreach (FileInfo fi in fg.Files) {
+							backupFile(fi);
+						}
+					}
+					foreach (FileInfo fi in gameVersion.Files) {
+						backupFile(fi);
+					}
+					YobaDialog.ShowDialog(String.Format(Locale.Get("SettingsMakeBackupDone"), bkpdir));
+				}
+				catch (Exception ex) {
+					YobaDialog.ShowDialog(ex.Message);
+				}
 			}
 		}
 

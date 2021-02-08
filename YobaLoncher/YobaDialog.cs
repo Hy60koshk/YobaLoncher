@@ -58,6 +58,24 @@ namespace YobaLoncher {
 			NativeWinAPI.SetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE, _originalWinStyle);
 		}
 
+		/*protected override void OnPaint(PaintEventArgs e) {
+			e.Graphics.DrawRectangle(Pens.Black, this.Bounds);
+		}*/
+		protected override void OnPaintBackground(PaintEventArgs e) {
+			base.OnPaintBackground(e);
+			//Rectangle rect = new Rectangle(0, -1, this.ClientSize.Width - 1, this.ClientSize.Height);
+
+			Pen pen1 = new Pen(Color.FromArgb(40, 41, 42), 1);
+			Pen pen2 = new Pen(Color.FromArgb(100, 101, 102), 1);
+			int corner1 = ClientSize.Height - 1;
+			int corner2 = ClientSize.Width - 1;
+			e.Graphics.DrawLine(pen1, 0, 0, 0, corner1);
+			e.Graphics.DrawLine(pen1, 0, corner1, corner2, corner1);
+			e.Graphics.DrawLine(pen2, corner2, corner1 - 1, corner2, 0);
+			e.Graphics.DrawLine(pen2, corner2, 0, 1, 0);
+			//e.Graphics.DrawRectangle(pen, rect);
+		}
+
 		private void startInit(string message) {
 			InitializeComponent();
 			_originalWinStyle = NativeWinAPI.GetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE);
@@ -301,6 +319,28 @@ namespace YobaLoncher {
 			Location = new Point(formsize.Width - 30, -3);
 		}
 
+		protected override void OnPaint(PaintEventArgs e) {
+			base.OnPaint(e);
+
+			if (this.Parent is YobaDialog) {
+				Pen pen1 = new Pen(Color.FromArgb(99, 100, 101), 1);
+				Pen pen2 = new Pen(Color.FromArgb(100, 101, 102), 1);
+				/*Rectangle rect = new Rectangle(0, 3, ClientSize.Width - 3, ClientSize.Height - 1);
+				e.Graphics.DrawRectangle(pen2, rect);*/
+				int corner1 = ClientSize.Height - 1;
+				int corner2 = ClientSize.Width - 3;
+				e.Graphics.DrawLine(pen1, 0, 4, 0, corner1);
+				e.Graphics.DrawLine(pen1, 0, corner1, corner2 - 1, corner1);
+				e.Graphics.DrawLine(pen2, corner2, corner1, corner2, 3);
+				e.Graphics.DrawLine(pen2, corner2, 3, 0, 3);
+			}
+			else {
+				Pen pen2 = new Pen(Color.FromArgb(100, 101, 102), 1);
+				Rectangle rect = new Rectangle(0, 0, ClientSize.Width - 1, ClientSize.Height - 1);
+				e.Graphics.DrawRectangle(pen2, rect);
+			}
+		}
+
 		public override void ApplyUIStyles(UIElement styleInfo) {
 			base.ApplyUIStyles(styleInfo);
 
@@ -309,7 +349,7 @@ namespace YobaLoncher {
 			}
 			if (styleInfo.CustomStyle) {
 				BackColor = YU.colorFromString(styleInfo.BgColor, Color.FromArgb(62, 63, 64));
-				FlatAppearance.BorderSize = styleInfo.BorderSize > -1 ? styleInfo.BorderSize : 1;
+				FlatAppearance.BorderSize = styleInfo.BorderSize > -1 ? styleInfo.BorderSize : 0;
 				FlatAppearance.MouseOverBackColor = YU.colorFromString(styleInfo.BgColorHover, BtnColors.Back);
 				FlatAppearance.MouseDownBackColor = YU.colorFromString(styleInfo.BgColorDown, BtnColors.MouseDown);
 			}
@@ -376,6 +416,94 @@ namespace YobaLoncher {
 			ForeColor = Color.White;
 			FormattingEnabled = true;
 			//DrawMode = DrawMode.OwnerDrawFixed;
+		}
+	}
+
+	internal class YobaProgressBar : Panel {
+
+		private int value = 0;
+		private int maxValue = 100;
+		private bool overflow = false;
+		private Pen penBG_ = new Pen(Color.FromArgb(62, 63, 64), 1);
+		private Pen penBorder_ = new Pen(Color.FromArgb(100, 101, 102), 1);
+		private Pen penValue_ = new Pen(Color.FromArgb(10, 154, 57), 1);
+		private Pen penOverflow_ = new Pen(Color.FromArgb(12, 113, 160), 1);
+
+		public YobaProgressBar() : base() {
+			BackColor = Color.FromArgb(62, 63, 64);
+			Location = new Point(220, 369);
+			Margin = new Padding(0);
+			Size = new Size(311, 24);
+			TabIndex = 112;
+		}
+
+		protected override void OnPaint(PaintEventArgs e) {
+			base.OnPaint(e);
+
+			Rectangle rect = new Rectangle(0, 0, ClientSize.Width - 1, ClientSize.Height - 1);
+			e.Graphics.DrawRectangle(penBorder_, rect);
+			int valueWidth;
+			if (value > maxValue) {
+				overflow = true;
+				value = value % maxValue;
+				if (value == 0) {
+					value = maxValue;
+				}
+			}
+			rect = new Rectangle(1, 1, ClientSize.Width - 2, ClientSize.Height - 2);
+
+			if (value == maxValue) {
+				e.Graphics.FillRectangle((overflow ? penOverflow_ : penValue_).Brush, rect);
+			}
+			else {
+				e.Graphics.FillRectangle(penBG_.Brush, rect);
+				valueWidth = (ClientSize.Width - 2) / maxValue * value;
+				if (valueWidth > 0) {
+					e.Graphics.FillRectangle((overflow ? penOverflow_ : penValue_).Brush, new Rectangle(1, 1, valueWidth, ClientSize.Height - 2));
+				}
+			}
+		}
+
+		public int Value {
+			get => value;
+			set {
+				if (!overflow) {
+					if (value == this.value) {
+						return;
+					}
+					else if (value < 0) {
+						if (this.value > 0) {
+							this.value = 0;
+							this.Update();
+						}
+						return;
+					}
+				}
+				else if (value < 0) {
+					this.value -= value;
+					if (this.value < 0) {
+						this.value = maxValue - this.value % maxValue;
+					}
+					this.Update();
+					return;
+				}
+				overflow = false;
+				this.value = value;
+				this.Refresh();
+			}
+		}
+		public int MaxValue {
+			get => maxValue;
+			set {
+				if (value == this.maxValue) {
+					return;
+				}
+				if (value < 1) {
+					throw new Exception("The maxinun value of a progress bar cannot be less than 1.");
+				}
+				this.maxValue = value;
+				this.Update();
+			}
 		}
 	}
 }

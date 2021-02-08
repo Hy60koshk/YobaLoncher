@@ -8,20 +8,192 @@
 
 <script>
 
-document.addEventListener("DOMContentLoaded", function() {
-	var optionals = document.getElementsByClassName('optional')
+var elementPrototype = typeof HTMLElement !== "undefined" ? HTMLElement.prototype : Element.prototype;
 
-	for (var i = 0; i < optionals.length; i++) {
-		var label = optionals[i].nextSibling
-		label.__cb = optionals[i]
-		label.addEventListener("click", function() {
-			if (this.__cb.checked) {
-				window.external.CheckFile(this.__cb.id);
-			} else {
-				window.external.UncheckFile(this.__cb.id);
-			}
-		})
+elementPrototype.appendTo = function(parent) {
+	parent.appendChild(this);
+	return this
+};
+elementPrototype.prependTo = function(parent) {
+	if (parent.firstChild) {
+		parent.insertBefore(this, parent.firstChild);
+	} else {
+		parent.appendChild(this);
 	}
+	return this
+};
+elementPrototype.hasClass = function(theClass) {
+	return this.classList.contains(theClass)
+};
+elementPrototype.addClass = function(theClass) {
+	this.classList.add(theClass)
+	return this
+};
+elementPrototype.removeClass = function(theClass) {
+	this.classList.remove(theClass)
+	return this
+};
+elementPrototype.appendText = function(text) {
+	this.appendChild(document.createTextNode(text));
+	return this
+};
+elementPrototype.clear = function() {
+	while (this.lastChild) {
+		this.lastChild.remove()
+	}
+	return this
+};
+elementPrototype.remove = Text.prototype.remove = function() {
+	if (this.parentNode) {
+		this.parentNode.removeChild(this);
+	}
+	return this
+};
+
+elementPrototype.toggle = function() {
+	if (this.__savedDisplay) {
+		this.style.display = this.__savedDisplay
+		this.__savedDisplay = false
+	} else {
+		this.__savedDisplay = this.style.display
+		if (this.__savedDisplay == 'none') {
+			this.__savedDisplay = 'block'
+			return this.toggle()
+		}
+		this.style.display = 'none'
+	}
+	return this
+};
+
+function getEl(id) {
+	return document.getElementById(id);
+}
+function spawn(parent, tagName, prepend) {
+	if (prepend) {
+		return document.createElement(tagName).prependTo(parent);
+	} else {
+		return parent.appendChild(document.createElement(tagName));
+	}
+}
+
+var LOCALE_ = {
+	Download: "[[[DOWNLOAD]]]"
+	, DontDownload: "[[[NODOWNLOAD]]]"
+	, DownloadForced: "[[[DOWNLOADFORCED]]]"
+	, Update: "[[[UPDATE]]]"
+	, DontUpdate: "[[[NOUPDATE]]]"
+	, UpdateForced: "[[[UPDATEFORCED]]]"
+}
+
+function StyledComboBox(selectedIdx, variants) {
+	var containerEl = document.createElement('div').addClass('comboBox');
+	var valueDisplay = spawn(containerEl, 'div').addClass('valueDisplay');
+	var dropdownContainer = spawn(containerEl, 'div').addClass('dropdownContainer');
+	var disabled = false;
+	var _selfCB = this
+	_selfCB.Container = containerEl
+	
+	for (var i = 0; i < variants.length; i++) {
+		var variant = variants[i];
+		var dropdownVariant = spawn(dropdownContainer, 'div').addClass('dropdownVariant').appendText(variant.Text);
+		dropdownVariant.__variant = variant
+		dropdownVariant.__select = function() {
+			if (!disabled) {
+				if (_selfCB.Value != this.__variant.Value) {
+					valueDisplay.clear().appendText(this.__variant.Text)
+					_selfCB.Value = this.__variant.Value
+					if (typeof _selfCB.OnSelect == 'function') {
+						_selfCB.OnSelect()
+					}
+					setTimeout(function() {
+						dropdownContainer.style.minWidth = containerEl.offsetWidth + "px"
+					}, 1)
+				}
+				dropdownContainer.toggle()
+			}
+		}
+		dropdownVariant.onclick = function() {
+			this.__select()
+		}
+		dropdownVariant.onkeyup = function(e) {
+			if (e.code == "Enter") {
+				this.__select()
+			}
+		}
+		if (i == selectedIdx) {
+			dropdownVariant.__select()
+		}
+	}
+
+	this.Disable = function() {
+		containerEl.addClass('disabled');
+		disabled = true
+	}
+	setTimeout(function() {
+		dropdownContainer.style.top = containerEl.offsetHeight
+	}, 1)
+	valueDisplay.onclick = function() {
+		if (!disabled) {
+			dropdownContainer.toggle()
+		}
+	}
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+	var statusList = getEl("articleContent");
+
+	/*function bindSwitch(optionals) {
+		for (var i = 0; i < optionals.length; i++) {
+			var label = optionals[i]
+			label.addEventListener("click", function() {
+				if (!statusList.classList.contains("disabled")) {
+					if (this.classList.contains("checked")) {
+						window.external.UncheckFile(this.id);
+						this.classList.remove("checked")
+					} else {
+						window.external.CheckFile(this.id);
+						this.classList.add("checked")
+					}
+				}
+			})
+		}
+	}*/
+	
+	function onSelect() {
+		if (!statusList.classList.contains("disabled")) {
+			if (this.Value) {
+				window.external.CheckFile(this.Id);
+			} else {
+				window.external.UncheckFile(this.Id);
+			}
+		}
+	}
+
+	function bindSwitch(optionals, key, disabled) {
+		for (var i = 0; i < optionals.length; i++) {
+			(function(label) {
+				var cb = new StyledComboBox(label.hasClass("checked") ? 0 : 1, [
+					{
+						Text: LOCALE_[key]
+						, Value: true
+					} , {
+						Text: LOCALE_["Dont" + key]
+						, Value: false
+					}
+				])
+				cb.Container.prependTo(label)
+				if (disabled) {
+					cb.Disable();
+				} else {
+					cb.Id = label.id
+					cb.OnSelect = onSelect
+				}
+			})(optionals[i]);
+		}
+	}
+	bindSwitch(document.getElementsByClassName('optional'), 'Download')
+	bindSwitch(document.getElementsByClassName('recommended'), 'Update')
+	bindSwitch(document.getElementsByClassName('forced'), 'UpdateForced', true)
 
 	var spoilers = document.getElementsByClassName('group-spoiler-button')
 	for (var i = 0; i < spoilers.length; i++) {
@@ -48,16 +220,6 @@ document.addEventListener("DOMContentLoaded", function() {
 		}
 	}
 });
-
-function getEl(id) {
-	return document.getElementById(id);
-}
-function spawn(parent, tagName) {
-	return parent.appendChild(document.createElement(tagName));
-}
-function appendText(parent, text) {
-	parent.appendChild(document.createTextNode(text));
-}
 </script>
 <style>
 body {
@@ -104,45 +266,6 @@ h1 {
 	height: 320px !important;
 	position: absolute;
 }
-.kb-side-menu {
-	position: absolute;
-	width: 140px;
-	top: -13px;
-	left: -13px;
-	border-right: 2px solid #7C4D34;
-	vertical-align: top;
-}
-.kb-side-item {
-	font-size: 15px;
-	color: #fff;
-	width: 140px;
-	height: 80px;
-	line-height: 20px;
-	text-align: right;
-	border-radius: 4px 0 0 4px;
-	background: linear-gradient(90deg, transparent 10%, rgba(255,255,255,0.1));
-	padding: 0px 4px 2px 16px;
-	background-size: contain;
-	background-position: right;
-	background-repeat: no-repeat;
-	text-shadow: 0 0 2px #000;
-	display: flex;
-	flex-direction: column;
-	text-align: left;
-	align-items: baseline;
-	justify-content: center;
-
-}
-.kb-side-item.active {
-	background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35));
-	cursor: default;
-}
-.kb-side-item:not(.active) {
-	cursor: pointer;
-}
-.kb-side-item:not(.active):hover {
-	background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5));
-}
 .article-content {
 	position: absolute;
 	top: -33px;
@@ -187,11 +310,47 @@ h1 {
 	display: none;
 }
 
-.article-content label span {
-	display: block;
+.comboBox {
+	display: inline-block;
+	border: 1px solid rgba(186,180,160,0.4);
+	border-radius: 2px;
+	box-shadow: 1px 1px 2px #111;
+	position: relative;
+}
+.comboBox.disabled {
+	opacity: 0.8;
+}
+.valueDisplay {
+	padding: 2px 20px 3px 4px;
+	background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAAGCAYAAAAVMmT4AAAAB3RJTUUH5AsUChYeAqoPjwAAAAlwSFlzAAALEgAACxIB0t1+/AAAAARnQU1BAACxjwv8YQUAAABkSURBVHjaY/z//38xAwPDBUZGxr0MOABQjTeQUgAx7IH4MVQTNoX1UHljmIA0EJ8G4sVAzA0V4wbizUC8H4jF0U1gB+L5QHweiN2B+DoQTwZiZgY87ssG4s9AHM9ADIA5BR0AAGANXmKHZJoSAAAAAElFTkSuQmCC');
+	background-repeat: no-repeat;
+    background-position: 96% center;
+    background-position: calc(100% - 4px) center;
+    background-size: auto;
+}
+.comboBox.disabled .valueDisplay {
+	padding: 2px 4px 3px 4px;
+	background-image: none;
+}
+.dropdownContainer {
+	border-radius: 2px;
+	border: 1px solid #3F3321;
+	position: absolute;
+	z-index: 1;
+	background-color: #140D05;
+	margin: 0 0 0 -1px;
+	box-shadow: 1px 1px 2px #111;
+}
+.dropdownVariant {
+	padding: 2px 4px 3px;
+}
+.dropdownVariant:hover {
+	background-color: #3F3321;
+}
+
+.article-content .fileEntry {
 	cursor: default;
-	padding: 5px 5px 4px 22px;
-	background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAVCAYAAABG1c6oAAAAB3RJTUUH5AsMDyYAtIW5hAAAAAlwSFlzAAALEgAACxIB0t1+/AAAAARnQU1BAACxjwv8YQUAAACbSURBVHjaY+ThYGBnYGDIAOIKIJZgIA/cAeIpQDyDmY2FoQHIaANiHjINAwEhIPYA4g+MQBc+p8BlGC4FGfgfxjM21GVgZmYmyYQ/f/4wnLtwBc5nQpYk1TAQYGFhQeEzkWwCATBq4KiBowYOvIH///8n2QB0PaDi6z2QFqCSA1+AXLiAij4GVwFngAw2IDYAYhYyDfoAMgyIOwAKJhsOq7EG4gAAAABJRU5ErkJggg==');
+	padding: 5px 5px 4px 0px;
 	background-repeat: no-repeat;
     background-position: left 3px;
     background-size: auto 70%;
@@ -203,18 +362,14 @@ h1 {
 .article-content input {
 	display: none;
 }
-.article-content input:checked + span {
-	background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAVCAYAAABG1c6oAAAAB3RJTUUH5AsMDyUaYsoTPQAAAAlwSFlzAAALEgAACxIB0t1+/AAAAARnQU1BAACxjwv8YQUAAAGlSURBVHjaY+ThYGBnYGDIAOIKIJZgIA/cAeIpQDyDmY2FoQHIaANiHjINAwEhIPYA4g+MQBc+p8BlGC4FGfgfxjM21GVgZmYmyYQ/f/4wnLtwBc5nQpYk1TAQYGNjQ+EzkWwCsmYmJob+yXMYsnLyqWNgYWkNg46eIUNRSQWDkJAwZQZ6+gQwePkEMvz9+5chITaC4d27t9gN5OYmnHo0tXQZCktqwOypk7oZjhw+iN3LcYnpDFNmLmYQhDofGwDJNbX3gyNw5/ZNDBvXrUQNVxiDj5+fwTcglEFOXoGhb9IcrIaCIqGprR8cXjdvXGPo727FVANjfPr4kaEoNwUcFrgMBUWClrYuWE1dVSHD79+/cBsIAo8fPcBpKHIktNSXM7x5/QprkGBECjZDrW0cUCLh4oWzOMMYJeuZmRjAJWTlgIYBE60QkrdBkdDVVo9hyKkzF3C7EJtLQQBXJBD0MjZD79y+iTMS8HrZ1FifgZGRkaAmZPD//3+G02cvohj4HkgLkGQKbvAC5OUFVDIMBMBVwBkgA1SogaKYhUyDPoAMA+IOALQUltjJuyQuAAAAAElFTkSuQmCC');
-}
 
-.article-content input.exists + span,
-.article-content input.exists:checked + span {
+.article-content .fileEntry.exists {
+	padding: 5px 5px 4px 22px;
 	background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAVCAYAAABG1c6oAAAAB3RJTUUH5AsODhAUjIheMAAAAAlwSFlzAAALEQAACxEBf2RfkQAAAARnQU1BAACxjwv8YQUAAADcSURBVHjaY2AYBQMOkj6UMSPzmahg2AEgnU8VA4FgBhDbAHEF0FBhigwEGpAMpFKA+A8QR8wT6HqL1UCgQn4iDDOHug4ECoCGHcTqZaDCeiB1AkiL4zEMJLcBiFmAeAHQsKnI8kxICkEuywBiDWhAi2MxjBlqmAQQn4GqZ8BqINCmj0DKAYhf4DEU5E0LqJoAoJ6fOA2EGnoTl6FYIuEptiBhxBFO6iDDoF67AcQVQLwGGm456OFG0EAshsIAKBISGfAAnOkQzfsMuCKBaBeiuXQFEPvgCrdRQF0AAJxyVSI0lS7jAAAAAElFTkSuQmCC');
 }
 
-.article-content input.forced + span,
-.article-content input.forced:checked + span {
-	background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAVCAYAAABG1c6oAAAAB3RJTUUH5AsMDyYbPuBwaAAAAAlwSFlzAAALEgAACxIB0t1+/AAAAARnQU1BAACxjwv8YQUAAAG7SURBVHjaY+ThYGBmYGBQBWItIOZkIA98BuJbQHybmY2FQQ/IMABiVjINAwF2IJYC4l9MQEKZAoPQgSoLsjeNDXUZmJmZSTLhz58/DOcuXIFxeZmQJUk1DATY2NhQ+LAwBANpKQmSDGNiYmLonzyHgZ2Dg+H0qZMQMUoCrLC0hkFHz5ChqKSCQUhImDIDPX0CGLx8Ahn+/v3LkBAbwfDu3VvsBnJz8xA0TFNLl6GwpAbMnjqpm+HI4YOIYEBWGJeYzjBl5mIGQajzsQGQXFN7PzgCd27fxLBx3UrUcIUx+Pj5GXwDQhnk5BUY+ibNwWooKBKa2vrB4XXzxjWG/u5WTDUwxqePHxmKclPAYYHLUFAkaGnrgtXUVRUy/P79C7eBIPD40QOchiJHQkt9OcOb16+wBglGOvz08QPDiWOHGOwcXRkkJKUYLKzsGN68eslQUdMC9vKUiV0MB/fvRjHk6bMX2F2Iy6X4IgGvl3EZCgK4IoFoA5ENvXP7Js5IQAcsyJz///8zMDIyYhianhSB0wCQHmTACCyxQ4E0GwN1wHeQl+9RyTAQAFcB7xggYSnIQH5hAQrc20B8FQCxkp5JELp1EgAAAABJRU5ErkJggg==');
+#articleContent.disabled {
+	opacity: 0.6;
 }
 </style>
 

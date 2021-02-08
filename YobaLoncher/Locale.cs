@@ -90,6 +90,15 @@ namespace YobaLoncher {
 			, { "DirectoryAccessDenied", "Cannot move file \"{0}\": Access denied. Restart the Launcher as Administrator." }
 			, { "UpdateSuccessful", "All files are up to date!\r\nShall we start the game now?" }
 			, { "LauncherIsInOfflineMode", "Launcher is in Offline mode" }
+			, { "ModsBtn", "Mods" }
+			, { "ModsTooltip", "Mods" }
+			, { "NoModsForThisVersion", "There are no mods for your version of the game." }
+			, { "InstallMod", "Install" }
+			, { "UninstallMod", "Uninstall" }
+			, { "EnableMod", "Enable" }
+			, { "DisableMod", "Disable" }
+			, { "FollowingModsAreDisabled", "The following mods do not support the currect version and will be disabled: {0}" }
+			, { "FollowingModsMayBeEnabled", "The following mods were enabled the last time you played this version. Do you want to enable them now?\r\n{0}" }
 			, { "CannotWriteCfg", "Cannot write the configuration file" }
 			, { "CannotReadCfg", "Cannot read the configuration file" }
 			, { "PreloaderTitle", "YobaLöncher — Loading..." }
@@ -105,6 +114,9 @@ namespace YobaLoncher {
 			, { "SettingsOfflineMode", "Offline mode" }
 			, { "SettingsOfflineModeTooltip", "Offline mode" }
 			, { "SettingsCreateShortcut", "Put shortcut on Desktop" }
+			, { "SettingsMakeBackup", "Make backup" }
+			, { "SettingsMakeBackupInfo", "Create a backup copy of all the vulnerable files into {0} ?" }
+			, { "SettingsMakeBackupDone", "Files are successfully backed up at {0}" }
 			, { "OfflineModeSet", "Launcher set to run in offline mode. Restart now?" }
 			, { "OnlineModeSet", "Launcher set to run in online mode. Restart now?" }
 			, { "GamePathSelectionTitle", "Select the game folder" }

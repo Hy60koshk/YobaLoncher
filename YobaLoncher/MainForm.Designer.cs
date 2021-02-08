@@ -24,12 +24,12 @@
 		/// </summary>
 		private void InitializeComponent() {
 			this.components = new System.ComponentModel.Container();
-			this.updateProgressBar = new System.Windows.Forms.ProgressBar();
+			this.updateProgressBar = new YobaProgressBar();
 			this.updateLabelText = new System.Windows.Forms.Label();
 			this.draggingPanel = new System.Windows.Forms.Panel();
 			this.changelogBrowser = new System.Windows.Forms.WebBrowser();
 			this.statusPanel = new System.Windows.Forms.Panel();
-			this.statusBowser = new System.Windows.Forms.WebBrowser();
+			this.statusBrowser = new System.Windows.Forms.WebBrowser();
 			this.linksPanel = new System.Windows.Forms.Panel();
 			this.theToolTip = new System.Windows.Forms.ToolTip(this.components);
 			this.changelogMenuBtn = new YobaLoncher.YobaButton();
@@ -91,7 +91,7 @@
 			// statusPanel
 			// 
 			this.statusPanel.BackColor = System.Drawing.Color.Transparent;
-			this.statusPanel.Controls.Add(this.statusBowser);
+			this.statusPanel.Controls.Add(this.statusBrowser);
 			this.statusPanel.Location = new System.Drawing.Point(323, 16);
 			this.statusPanel.Name = "statusPanel";
 			this.statusPanel.Size = new System.Drawing.Size(263, 138);
@@ -100,11 +100,11 @@
 			// 
 			// statusBowser
 			// 
-			this.statusBowser.Location = new System.Drawing.Point(29, 29);
-			this.statusBowser.MinimumSize = new System.Drawing.Size(20, 20);
-			this.statusBowser.Name = "statusBowser";
-			this.statusBowser.Size = new System.Drawing.Size(221, 67);
-			this.statusBowser.TabIndex = 0;
+			this.statusBrowser.Location = new System.Drawing.Point(29, 29);
+			this.statusBrowser.MinimumSize = new System.Drawing.Size(20, 20);
+			this.statusBrowser.Name = "statusBowser";
+			this.statusBrowser.Size = new System.Drawing.Size(221, 67);
+			this.statusBrowser.TabIndex = 0;
 			// 
 			// linksPanel
 			// 
@@ -324,7 +324,6 @@
 			this.modsButton.TabIndex = 111;
 			this.modsButton.Text = "Mods";
 			this.modsButton.UseVisualStyleBackColor = false;
-			this.modsButton.Visible = false;
 			this.modsButton.Click += new System.EventHandler(this.modsButton_Click);
 			// 
 			// MainForm
@@ -364,7 +363,7 @@
 
 		#endregion
 
-		private System.Windows.Forms.ProgressBar updateProgressBar;
+		private YobaProgressBar updateProgressBar;
 		private System.Windows.Forms.Label updateLabelText;
 		private YobaButton launchGameButton;
 		private YobaCloseButton closeButton;
@@ -382,7 +381,7 @@
 		private System.Windows.Forms.Panel changelogPanel;
 		private System.Windows.Forms.Panel modsPanel;
 		private YobaButton refreshButton;
-		private System.Windows.Forms.WebBrowser statusBowser;
+		private System.Windows.Forms.WebBrowser statusBrowser;
 		private System.Windows.Forms.Label loncherIsOfflineLable;
 		private YobaButton modsButton;
 		private System.Windows.Forms.WebBrowser modsBrowser;

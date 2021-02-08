@@ -57,7 +57,7 @@
 			// draggingPanel
 			// 
 			this.draggingPanel.ForeColor = System.Drawing.Color.Transparent;
-			this.draggingPanel.Location = new System.Drawing.Point(0, 0);
+			this.draggingPanel.Location = new System.Drawing.Point(1, 1);
 			this.draggingPanel.Name = "draggingPanel";
 			this.draggingPanel.Size = new System.Drawing.Size(378, 24);
 			this.draggingPanel.TabIndex = 300;

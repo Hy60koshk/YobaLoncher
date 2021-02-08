@@ -24,7 +24,7 @@
 		/// </summary>
 		private void InitializeComponent() {
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(PreloaderForm));
-			this._progressBar1 = new System.Windows.Forms.ProgressBar();
+			this._progressBar1 = new YobaProgressBar();// System.Windows.Forms.ProgressBar();
 			this.loadingLabel = new System.Windows.Forms.Label();
 			this.loadingLabelError = new System.Windows.Forms.Label();
 			this.labelAbout = new System.Windows.Forms.Label();
@@ -35,8 +35,8 @@
 			this._progressBar1.Location = new System.Drawing.Point(12, 277);
 			this._progressBar1.Name = "_progressBar1";
 			this._progressBar1.Size = new System.Drawing.Size(376, 11);
-			this._progressBar1.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
-			this._progressBar1.TabIndex = 0;
+			//this._progressBar1.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
+			//this._progressBar1.TabIndex = 0;
 			// 
 			// loadingLabel
 			// 
@@ -96,7 +96,7 @@
 
 		#endregion
 
-		private System.Windows.Forms.ProgressBar _progressBar1;
+		private YobaProgressBar _progressBar1; //System.Windows.Forms.ProgressBar _progressBar1;
 		private System.Windows.Forms.Label loadingLabel;
 		private System.Windows.Forms.Label loadingLabelError;
 		private System.Windows.Forms.Label labelAbout;
