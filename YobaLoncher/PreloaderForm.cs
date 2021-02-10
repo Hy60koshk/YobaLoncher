@@ -255,55 +255,12 @@ namespace YobaLoncher {
 		}
 
 		private void updateGameVersion() {
-			string curVer = "1.4.0.47";//FileVersionInfo.GetVersionInfo(Program.GamePath + Program.LoncherSettings.ExeName).FileVersion.Replace(',', '.');
+			string curVer = FileVersionInfo.GetVersionInfo(Program.GamePath + Program.LoncherSettings.ExeName).FileVersion.Replace(',', '.');
 			Program.GameVersion = curVer;
-			Program.LoncherSettings.LoadFileListForVersion(curVer);
-			/*List<string> am = LauncherConfig.ActiveMods;
-			List<string> disabled = new List<string>();
-			foreach (ModInfo mi in Program.LoncherSettings.Mods) {
-				if (am.Contains(mi.Name)) {
-					if (mi.CurrentVersion is null) {
-						disabled.Add(mi.Name);
-					}
-					else {
-						mi.Active = true;
-					}
-				}
-			}
-			if (disabled.Count > 0) {
-				YobaDialog.ShowDialog(String.Format(Locale.Get("FollowingModsAreDisabled"), String.Join(", ", disabled)));
-			}*/
-			Program.ModsDisabledPath = Program.GamePath + "_loncher_disabled_mods\\";
 
-			/*if (Directory.Exists(bkpPath)) {
-				disabled.Clear();
-				List<ModInfo> availableMI = new List<ModInfo>();
-				foreach (ModInfo mi in Program.LoncherSettings.Mods) {
-					if (mi.CfgInfo != null) {
-						if (Directory.Exists(bkpPath + mi.Name)) {
-							disabled.Add(mi.Name);
-							availableMI.Add(mi);
-						}
-					}
-				}
-				if (disabled.Count > 0) {
-					string msg = String.Format(Locale.Get("FollowingModsMayBeEnabled"), String.Join(", ", disabled));
-					if (DialogResult.Yes == YobaDialog.ShowDialog(msg, YobaDialog.YesNoBtns)) {
-						foreach (ModInfo mi in availableMI) {
-							string modPath = bkpPath + mi.Name + '\\';
-							foreach (FileInfo fi in mi.CurrentVersion) {
-								if (File.Exists(modPath + fi.Path)) {
-									File.Move(modPath + fi.Path, Program.GamePath + fi.Path);
-								}
-							}
-							Directory.Delete(modPath);
-						}
-						if (Directory.GetDirectories(bkpPath).Length == 0) {
-							Directory.Delete(bkpPath);
-						}
-					}
-				}
-			}*/
+			Program.ModsDisabledPath = Program.GamePath + "_loncher_disabled_mods\\";
+			Program.LoncherSettings.LoadFileListForVersion(curVer);
+			LauncherConfig.SaveMods();
 		}
 
 		private void showMainForm() {
@@ -726,6 +683,11 @@ namespace YobaLoncher {
 								updateGameVersion();
 								incProgress(10);
 								Program.GameFileCheckResult = FileChecker.CheckFilesOffline(Program.LoncherSettings.Files);
+								foreach (ModInfo mi in Program.LoncherSettings.Mods) {
+									if (mi.CfgInfo != null) {
+										FileChecker.CheckFilesOffline(mi.CurrentVersion);
+									}
+								}
 								showMainForm();
 							}
 							catch (Exception ex) {

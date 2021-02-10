@@ -92,11 +92,16 @@ namespace YobaLoncher {
 			, { "LauncherIsInOfflineMode", "Launcher is in Offline mode" }
 			, { "ModsBtn", "Mods" }
 			, { "ModsTooltip", "Mods" }
+			, { "ModInstallationDone", "Mods installed successfully" }
 			, { "NoModsForThisVersion", "There are no mods for your version of the game." }
+			, { "ModInstallationInProgress", "Installing..." }
 			, { "InstallMod", "Install" }
 			, { "UninstallMod", "Uninstall" }
 			, { "EnableMod", "Enable" }
 			, { "DisableMod", "Disable" }
+			, { "CannotEnableMod", "Cannot enable the mod" }
+			, { "AreYouSureInstallMod", "Are you sure you want to install {0} ({1}{2})?" }
+			, { "AreYouSureUninstallMod", "Are you sure you want to uninstall {0}?" }
 			, { "FollowingModsAreDisabled", "The following mods do not support the currect version and will be disabled: {0}" }
 			, { "FollowingModsMayBeEnabled", "The following mods were enabled the last time you played this version. Do you want to enable them now?\r\n{0}" }
 			, { "CannotWriteCfg", "Cannot write the configuration file" }

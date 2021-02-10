@@ -27,11 +27,14 @@ namespace YobaLoncher {
 			updateProgressBar.Value = 100;
 			updateLabelText.Text = Locale.Get("StatusCopyingFiles");
 			try {
-				LinkedListNode<FileInfo> currentMod = modsToUpload_.First;
-				while (currentMod.Value != lastFileInfo) {
+				LinkedListNode<FileInfo> currentMod = modFilesToUpload_.First;
+				bool gotLast = false;
+				while (!gotLast && currentMod != null) {
 					MoveUploadedFile(currentMod.Value);
+					gotLast = currentMod.Value == lastFileInfo;
+					currentMod = currentMod.Next;
+					modFilesToUpload_.RemoveFirst();
 				}
-				MoveUploadedFile(lastFileInfo);
 				modInfo.Install();
 				success = true;
 			}
@@ -46,66 +49,45 @@ namespace YobaLoncher {
 			return success;
 		}
 
-		private void StartDownloadMods() {
-			launchGameButton.Enabled = false;
-			currentFile_ = modsToUpload_.First;
-
-			while (currentFile_ != null) {
-				if (currentFile_.Value.IsOK) {
-					if (!FinalizeModDownload(currentFile_.Value)) {
-						return;
-					}
-					currentFile_ = currentFile_.Next;
-				}
-				else {
-					break;
-				}
-			}
-			if (currentFile_ != null) {
+		private void DownloadNextMod() {
+			if (currentFile_ is null) {
+				launchGameButton.Enabled = false;
+				currentFile_ = modFilesToUpload_.First;
 				downloadProgressTracker_ = new DownloadProgressTracker(50, TimeSpan.FromMilliseconds(500));
-				DownloadFile(currentFile_.Value);
+			}
+			else if (currentFile_.Value.LastFileOfMod != null) {
+				if (!FinalizeModDownload(currentFile_.Value)) {
+					FinishModDownload();
+					return;
+				}
+				currentFile_ = modFilesToUpload_.First;
 			}
 			else {
-				if (!modsToUpload_.Last.Value.IsOK) {
-					if (!FinalizeModDownload(currentFile_.Value)) {
-						return;
-					}
+				currentFile_ = currentFile_.Next;
+			}
+			if (currentFile_ != null) {
+				if (currentFile_.Value.IsOK) {
+					DownloadNextMod();
 				}
+				else {
+					DownloadFile(currentFile_.Value);
+				}
+			}
+			else {
 				updateLabelText.Text = Locale.Get("ModInstallationDone");
-				CheckReady();
+				FinishModDownload();
 			}
 		}
 
-		private void DownloadNextMod() {
-			if (currentFile_.Value.LastFileOfMod != null) {
-				if (!FinalizeModDownload(currentFile_.Value)) {
-					return;
-				}
+		private void FinishModDownload() {
+			currentFile_ = null;
+			modFilesToUpload_ = null;
+			foreach (ModInfo mi in Program.LoncherSettings.Mods) {
+				mi.DlInProgress = false;
 			}
-			currentFile_ = currentFile_.Next;
-			while (currentFile_ != null) {
-				if (currentFile_.Value.IsOK) {
-					if (!FinalizeModDownload(currentFile_.Value)) {
-						return;
-					}
-					currentFile_ = currentFile_.Next;
-				}
-				else {
-					break;
-				}
-			}
-			if (currentFile_ != null) {
-				DownloadFile(currentFile_.Value);
-			}
-			else {
-				if (!modsToUpload_.Last.Value.IsOK) {
-					if (!FinalizeModDownload(currentFile_.Value)) {
-						return;
-					}
-				}
-				updateLabelText.Text = Locale.Get("ModInstallationDone");
-				CheckReady();
-			}
+			UpdateModsWebView();
+			CheckReady();
+			launchGameButton.Enabled = true;
 		}
 	}
 }
