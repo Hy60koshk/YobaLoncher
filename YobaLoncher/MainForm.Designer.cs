@@ -28,6 +28,7 @@
 			this.updateLabelText = new System.Windows.Forms.Label();
 			this.draggingPanel = new System.Windows.Forms.Panel();
 			this.changelogBrowser = new System.Windows.Forms.WebBrowser();
+			this.faqBrowser = new System.Windows.Forms.WebBrowser();
 			this.statusPanel = new System.Windows.Forms.Panel();
 			this.statusBrowser = new System.Windows.Forms.WebBrowser();
 			this.linksPanel = new System.Windows.Forms.Panel();
@@ -36,12 +37,15 @@
 			this.statusButton = new YobaLoncher.YobaButton();
 			this.linksButton = new YobaLoncher.YobaButton();
 			this.settingsButton = new YobaLoncher.YobaButton();
+			this.faqButton = new YobaLoncher.YobaButton();
 			this.closeButton = new YobaLoncher.YobaCloseButton();
 			this.launchGameButton = new YobaLoncher.YobaButton();
 			this.minimizeButton = new YobaLoncher.YobaCloseButton();
 			this.basePanel = new System.Windows.Forms.Panel();
 			this.changelogPanel = new System.Windows.Forms.Panel();
-			this.loncherIsOfflineLable = new System.Windows.Forms.Label();
+			this.faqPanel = new System.Windows.Forms.Panel();
+			this.changelogLoncherIsOfflineLable = new System.Windows.Forms.Label();
+			this.faqLoncherIsOfflineLable = new System.Windows.Forms.Label();
 			this.modsPanel = new System.Windows.Forms.Panel();
 			this.modsBrowser = new System.Windows.Forms.WebBrowser();
 			this.refreshButton = new YobaLoncher.YobaButton();
@@ -49,6 +53,7 @@
 			this.statusPanel.SuspendLayout();
 			this.basePanel.SuspendLayout();
 			this.changelogPanel.SuspendLayout();
+			this.faqPanel.SuspendLayout();
 			this.modsPanel.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -87,6 +92,14 @@
 			this.changelogBrowser.Name = "changelogBrowser";
 			this.changelogBrowser.Size = new System.Drawing.Size(254, 147);
 			this.changelogBrowser.TabIndex = 104;
+			// 
+			// faqBrowser
+			// 
+			this.faqBrowser.Location = new System.Drawing.Point(36, 29);
+			this.faqBrowser.MinimumSize = new System.Drawing.Size(20, 20);
+			this.faqBrowser.Name = "faqBrowser";
+			this.faqBrowser.Size = new System.Drawing.Size(254, 147);
+			this.faqBrowser.TabIndex = 105;
 			// 
 			// statusPanel
 			// 
@@ -133,7 +146,7 @@
 			this.changelogMenuBtn.Margin = new System.Windows.Forms.Padding(0);
 			this.changelogMenuBtn.Name = "changelogMenuBtn";
 			this.changelogMenuBtn.Size = new System.Drawing.Size(124, 28);
-			this.changelogMenuBtn.TabIndex = 106;
+			this.changelogMenuBtn.TabIndex = 16;
 			this.changelogMenuBtn.Text = "Changelog";
 			this.changelogMenuBtn.UseVisualStyleBackColor = false;
 			this.changelogMenuBtn.Click += new System.EventHandler(this.changelogMenuBtn_Click);
@@ -150,7 +163,7 @@
 			this.statusButton.Margin = new System.Windows.Forms.Padding(0);
 			this.statusButton.Name = "statusButton";
 			this.statusButton.Size = new System.Drawing.Size(124, 28);
-			this.statusButton.TabIndex = 105;
+			this.statusButton.TabIndex = 15;
 			this.statusButton.Text = "Check Results";
 			this.statusButton.UseVisualStyleBackColor = false;
 			this.statusButton.Click += new System.EventHandler(this.checkResultMenuBtn_Click);
@@ -167,7 +180,7 @@
 			this.linksButton.Margin = new System.Windows.Forms.Padding(0);
 			this.linksButton.Name = "linksButton";
 			this.linksButton.Size = new System.Drawing.Size(124, 28);
-			this.linksButton.TabIndex = 102;
+			this.linksButton.TabIndex = 17;
 			this.linksButton.Text = "Links";
 			this.linksButton.UseVisualStyleBackColor = false;
 			this.linksButton.Click += new System.EventHandler(this.linksMenuBtn_Click);
@@ -184,10 +197,27 @@
 			this.settingsButton.Margin = new System.Windows.Forms.Padding(0);
 			this.settingsButton.Name = "settingsButton";
 			this.settingsButton.Size = new System.Drawing.Size(124, 26);
-			this.settingsButton.TabIndex = 101;
+			this.settingsButton.TabIndex = 18;
 			this.settingsButton.Text = "Settings";
 			this.settingsButton.UseVisualStyleBackColor = false;
 			this.settingsButton.Click += new System.EventHandler(this.settingsButton_Click);
+			// 
+			// faqButton
+			// 
+			this.faqButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(48)))), ((int)(((byte)(48)))), ((int)(((byte)(50)))));
+			this.faqButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
+			this.faqButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(11)))));
+			this.faqButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+			this.faqButton.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, ((byte)(204)));
+			this.faqButton.ForeColor = System.Drawing.Color.White;
+			this.faqButton.Location = new System.Drawing.Point(19, 329);
+			this.faqButton.Margin = new System.Windows.Forms.Padding(0);
+			this.faqButton.Name = "faqButton";
+			this.faqButton.Size = new System.Drawing.Size(124, 26);
+			this.faqButton.TabIndex = 20;
+			this.faqButton.Text = "FAQ";
+			this.faqButton.UseVisualStyleBackColor = false;
+			this.faqButton.Click += new System.EventHandler(this.faqButton_Click);
 			// 
 			// closeButton
 			// 
@@ -246,6 +276,7 @@
 			this.basePanel.Controls.Add(this.modsPanel);
 			this.basePanel.Controls.Add(this.linksPanel);
 			this.basePanel.Controls.Add(this.statusPanel);
+			this.basePanel.Controls.Add(this.faqPanel);
 			this.basePanel.Location = new System.Drawing.Point(153, 25);
 			this.basePanel.Name = "basePanel";
 			this.basePanel.Size = new System.Drawing.Size(610, 330);
@@ -254,7 +285,7 @@
 			// changelogPanel
 			// 
 			this.changelogPanel.BackColor = System.Drawing.Color.Transparent;
-			this.changelogPanel.Controls.Add(this.loncherIsOfflineLable);
+			this.changelogPanel.Controls.Add(this.changelogLoncherIsOfflineLable);
 			this.changelogPanel.Controls.Add(this.changelogBrowser);
 			this.changelogPanel.Location = new System.Drawing.Point(22, 16);
 			this.changelogPanel.Name = "changelogPanel";
@@ -262,16 +293,38 @@
 			this.changelogPanel.TabIndex = 110;
 			this.changelogPanel.Visible = false;
 			// 
+			// faqPanel
+			// 
+			this.faqPanel.BackColor = System.Drawing.Color.Transparent;
+			this.faqPanel.Controls.Add(this.faqLoncherIsOfflineLable);
+			this.faqPanel.Controls.Add(this.faqBrowser);
+			this.faqPanel.Location = new System.Drawing.Point(22, 16);
+			this.faqPanel.Name = "faqPanel";
+			this.faqPanel.Size = new System.Drawing.Size(282, 199);
+			this.faqPanel.TabIndex = 110;
+			this.faqPanel.Visible = false;
+			// 
 			// loncherIsOfflineLable
 			// 
-			this.loncherIsOfflineLable.AutoSize = true;
-			this.loncherIsOfflineLable.Font = new System.Drawing.Font("Verdana", 13F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, ((byte)(204)));
-			this.loncherIsOfflineLable.ForeColor = System.Drawing.Color.White;
-			this.loncherIsOfflineLable.Location = new System.Drawing.Point(24, 26);
-			this.loncherIsOfflineLable.Name = "loncherIsOfflineLable";
-			this.loncherIsOfflineLable.Size = new System.Drawing.Size(46, 16);
-			this.loncherIsOfflineLable.TabIndex = 105;
-			this.loncherIsOfflineLable.Text = "label1";
+			this.changelogLoncherIsOfflineLable.AutoSize = true;
+			this.changelogLoncherIsOfflineLable.Font = new System.Drawing.Font("Verdana", 13F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, ((byte)(204)));
+			this.changelogLoncherIsOfflineLable.ForeColor = System.Drawing.Color.White;
+			this.changelogLoncherIsOfflineLable.Location = new System.Drawing.Point(24, 26);
+			this.changelogLoncherIsOfflineLable.Name = "loncherIsOfflineLable";
+			this.changelogLoncherIsOfflineLable.Size = new System.Drawing.Size(46, 16);
+			this.changelogLoncherIsOfflineLable.TabIndex = 105;
+			this.changelogLoncherIsOfflineLable.Text = "label1";
+			// 
+			// faqIsOfflineLable
+			// 
+			this.faqLoncherIsOfflineLable.AutoSize = true;
+			this.faqLoncherIsOfflineLable.Font = new System.Drawing.Font("Verdana", 13F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, ((byte)(204)));
+			this.faqLoncherIsOfflineLable.ForeColor = System.Drawing.Color.White;
+			this.faqLoncherIsOfflineLable.Location = new System.Drawing.Point(24, 26);
+			this.faqLoncherIsOfflineLable.Name = "faqLoncherIsOfflineLable";
+			this.faqLoncherIsOfflineLable.Size = new System.Drawing.Size(46, 16);
+			this.faqLoncherIsOfflineLable.TabIndex = 105;
+			this.faqLoncherIsOfflineLable.Text = "label1";
 			// 
 			// modsPanel
 			// 
@@ -301,11 +354,11 @@
 			this.refreshButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
 			this.refreshButton.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, ((byte)(204)));
 			this.refreshButton.ForeColor = System.Drawing.Color.White;
-			this.refreshButton.Location = new System.Drawing.Point(112, 204);
+			this.refreshButton.Location = new System.Drawing.Point(0, 400);
 			this.refreshButton.Margin = new System.Windows.Forms.Padding(0);
 			this.refreshButton.Name = "refreshButton";
-			this.refreshButton.Size = new System.Drawing.Size(31, 28);
-			this.refreshButton.TabIndex = 110;
+			this.refreshButton.Size = new System.Drawing.Size(15, 35);
+			this.refreshButton.TabIndex = 1110;
 			this.refreshButton.UseVisualStyleBackColor = false;
 			this.refreshButton.Click += new System.EventHandler(this.refreshButton_Click);
 			// 
@@ -321,7 +374,7 @@
 			this.modsButton.Margin = new System.Windows.Forms.Padding(0);
 			this.modsButton.Name = "modsButton";
 			this.modsButton.Size = new System.Drawing.Size(124, 28);
-			this.modsButton.TabIndex = 111;
+			this.modsButton.TabIndex = 19;
 			this.modsButton.Text = "Mods";
 			this.modsButton.UseVisualStyleBackColor = false;
 			this.modsButton.Click += new System.EventHandler(this.modsButton_Click);
@@ -339,6 +392,7 @@
 			this.Controls.Add(this.draggingPanel);
 			this.Controls.Add(this.linksButton);
 			this.Controls.Add(this.settingsButton);
+			this.Controls.Add(this.faqButton);
 			this.Controls.Add(this.closeButton);
 			this.Controls.Add(this.launchGameButton);
 			this.Controls.Add(this.updateLabelText);
@@ -356,6 +410,7 @@
 			this.changelogPanel.ResumeLayout(false);
 			this.changelogPanel.PerformLayout();
 			this.modsPanel.ResumeLayout(false);
+			this.faqPanel.ResumeLayout(false);
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -369,9 +424,11 @@
 		private YobaCloseButton closeButton;
 		private YobaCloseButton minimizeButton;
 		private YobaButton settingsButton;
+		private YobaButton faqButton;
 		private YobaButton linksButton;
 		private System.Windows.Forms.Panel draggingPanel;
 		private System.Windows.Forms.WebBrowser changelogBrowser;
+		private System.Windows.Forms.WebBrowser faqBrowser;
 		private YobaButton statusButton;
 		private YobaButton changelogMenuBtn;
 		private System.Windows.Forms.Panel statusPanel;
@@ -380,9 +437,11 @@
 		private System.Windows.Forms.Panel basePanel;
 		private System.Windows.Forms.Panel changelogPanel;
 		private System.Windows.Forms.Panel modsPanel;
+		private System.Windows.Forms.Panel faqPanel;
 		private YobaButton refreshButton;
 		private System.Windows.Forms.WebBrowser statusBrowser;
-		private System.Windows.Forms.Label loncherIsOfflineLable;
+		private System.Windows.Forms.Label changelogLoncherIsOfflineLable;
+		private System.Windows.Forms.Label faqLoncherIsOfflineLable;
 		private YobaButton modsButton;
 		private System.Windows.Forms.WebBrowser modsBrowser;
 	}

@@ -13,6 +13,7 @@ namespace YobaLoncher {
 		, Status = 1
 		, Links = 2
 		, Mods = 3
+		, FAQ = 4
 	}
 
 	public class ModCfgInfo {
@@ -134,13 +135,14 @@ namespace YobaLoncher {
 		public List<ModInfo> Mods = new List<ModInfo>();
 		public List<LinkButton> Buttons;
 		public Dictionary<string, UIElement> UI;
+		public Dictionary<string, FileInfo> UIStyle;
 		public string GameName;
 		public string SteamGameFolder;
 		public string ExeName;
 		public string SteamID;
 		public string GogID;
-		public string ChangelogHtml = "";
-		public string ChangelogSite = "";
+		public StaticTabData Changelog = new StaticTabData();
+		public StaticTabData FAQ = new StaticTabData();
 		public string LoncherHash;
 		public string LoncherExe;
 		public StartPageEnum StartPage;
@@ -152,6 +154,12 @@ namespace YobaLoncher {
 		private WebClient wc_;
 		private LauncherDataRaw raw_;
 		public LauncherDataRaw RAW => raw_;
+
+		public class StaticTabData {
+			public string Html = null;
+			public string Site = null;
+			public string Error = null;
+		}
 
 		public class LauncherDataRaw {
 			public string GameName;
@@ -168,13 +176,18 @@ namespace YobaLoncher {
 			public string SteamID;
 			public string GogID;
 			public string Changelog;
-			public string ChangelogEscape;
-			public string ChangelogTemplate;
+			public string FAQFile;
+			public string QuoteToEscape;
 			public string LoncherHash;
 			public string LoncherExe;
 			public List<LinkButton> Buttons;
 			public List<RandomBgImageInfo> RandomBackgrounds;
 			public Dictionary<string, UIElement> UI;
+			public Dictionary<string, FileInfo> UIStyle;
+
+			// Deprecated
+			public string ChangelogEscape;
+			public string ChangelogTemplate;
 		}
 
 		public LauncherData(string json) {
@@ -194,6 +207,7 @@ namespace YobaLoncher {
 
 			StartPage = raw.StartPage;
 			UI = raw.UI ?? new Dictionary<string, UIElement>();
+			UIStyle = raw.UIStyle ?? new Dictionary<string, FileInfo>();
 
 			ExeName = raw.ExeName;
 			SteamID = raw.SteamID;
@@ -298,34 +312,6 @@ namespace YobaLoncher {
 			}
 			foreach (ModInfo mi in Mods) {
 				mi.InitCurrentVersion(curVer);
-			}
-		}
-
-		public async Task InitChangelog() {
-			try {
-				if (raw_.ChangelogTemplate != null) {
-					ChangelogHtml = (await wc_.DownloadStringTaskAsync(new Uri(raw_.ChangelogTemplate)));
-					if (raw_.Changelog != null && raw_.Changelog.Length > 0) {
-						string cl = (await wc_.DownloadStringTaskAsync(new Uri(raw_.Changelog)));
-						if (raw_.ChangelogEscape != null && raw_.ChangelogEscape.Length > 0) {
-							string quote = raw_.ChangelogEscape;
-							cl = cl.Replace("\\", "\\\\").Replace(quote, "\\" + quote);
-							if (cl.Contains("\r")) {
-								cl = cl.Replace("\r\n", "\\\r\n");
-							}
-							else {
-								cl = cl.Replace("\n", "\\\n");
-							}
-						}
-						ChangelogHtml = ChangelogHtml.Replace("[[[CHANGELOG]]]", cl);
-					}
-				}
-				else {
-					ChangelogSite = raw_.Changelog;
-				}
-			}
-			catch (Exception ex) {
-				YU.ErrorAndKill("Cannot get ChangeLog files:\r\n" + ex.Message);
 			}
 		}
 	}

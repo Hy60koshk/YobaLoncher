@@ -22,8 +22,8 @@ namespace YobaLoncher {
 		public const string IMGPATH = @"loncherData\images\";
 		public const string UPDPATH = @"loncherData\updates\";
 		public const string FNTPATH = @"loncherData\fonts\";
+		public const string LOCPATH = @"loncherData\loc";
 		public const string SETTINGSPATH = @"loncherData\settings";
-		public const string	LOCPATH = @"loncherData\loc";
 
 		public const string BG_FILE = IMGPATH + @"loncherbg.png";
 		public const string ICON_FILE = IMGPATH + @"icon.png";
@@ -177,6 +177,69 @@ namespace YobaLoncher {
 				return true;
 			}
 			return false;
+		}
+
+		private async Task<LauncherData.StaticTabData> getStaticTabData(string uiKey, string url, string quoteToEscape, string replacePlaceholder) {
+			LauncherData.StaticTabData staticTabData = new LauncherData.StaticTabData();
+			staticTabData.Site = url;
+			try {
+				if (Program.LoncherSettings.UIStyle.TryGetValue(uiKey, out FileInfo changelogFileInfo)) {
+					if (await assertFile(changelogFileInfo, Program.LoncherDataPath)) {
+						string changelogTemplate = File.ReadAllText(Program.LoncherDataPath + changelogFileInfo.Path, Encoding.UTF8);
+						string cl = "";
+						if (url != null && url.Length > 0) {
+							cl = (await wc_.DownloadStringTaskAsync(new Uri(url)));
+							File.WriteAllText(Program.LoncherDataPath + "tempLast" + uiKey, cl, Encoding.UTF8);
+							if (quoteToEscape != null && quoteToEscape.Length > 0) {
+								string quote = quoteToEscape;
+								cl = cl.Replace("\\", "\\\\").Replace(quote, "\\" + quote);
+								if (cl.Contains("\r")) {
+									cl = cl.Replace("\r\n", "\\\r\n");
+								}
+								else {
+									cl = cl.Replace("\n", "\\\n");
+								}
+							}
+						}
+						staticTabData.Html = changelogTemplate.Replace(replacePlaceholder, cl);
+					}
+				}
+			}
+			catch (Exception ex) {
+				staticTabData.Error = ex.Message;
+			}
+			return staticTabData;
+		}
+
+		private LauncherData.StaticTabData getStaticTabDataOffline(string uiKey, string url, string quoteToEscape, string replacePlaceholder) {
+			LauncherData.StaticTabData staticTabData = new LauncherData.StaticTabData();
+			staticTabData.Site = url;
+			try {
+				if (Program.LoncherSettings.UIStyle.TryGetValue(uiKey, out FileInfo changelogFileInfo)) {
+					if (assertOfflineFile(changelogFileInfo, Program.LoncherDataPath)) {
+						string changelogTemplate = File.ReadAllText(Program.LoncherDataPath + changelogFileInfo.Path, Encoding.UTF8);
+						string cl = "";
+						if (url != null && url.Length > 0) {
+							cl = File.ReadAllText(Program.LoncherDataPath + "tempLast" + uiKey, Encoding.UTF8);
+							if (quoteToEscape != null && quoteToEscape.Length > 0) {
+								string quote = quoteToEscape;
+								cl = cl.Replace("\\", "\\\\").Replace(quote, "\\" + quote);
+								if (cl.Contains("\r")) {
+									cl = cl.Replace("\r\n", "\\\r\n");
+								}
+								else {
+									cl = cl.Replace("\n", "\\\n");
+								}
+							}
+						}
+						staticTabData.Html = changelogTemplate.Replace(replacePlaceholder, cl);
+					}
+				}
+			}
+			catch (Exception ex) {
+				staticTabData.Error = ex.Message;
+			}
+			return staticTabData;
 		}
 
 		private string showPathSelection(string path) {
@@ -384,9 +447,9 @@ namespace YobaLoncher {
 						YU.ErrorAndKill(Locale.Get("CannotUpdateLoncher") + ":\r\n" + ex.Message + "\r\n" + ex.StackTrace);
 						return;
 					}
+					LauncherData.LauncherDataRaw launcherDataRaw = Program.LoncherSettings.RAW;
 					try {
-						LauncherData.LauncherDataRaw raw = Program.LoncherSettings.RAW;
-						if (await assertFile(raw.Icon, IMGPATH, ICON_FILE)) {
+						if (await assertFile(launcherDataRaw.Icon, IMGPATH, ICON_FILE)) {
 							Bitmap bm = YU.readBitmap(ICON_FILE);
 							if (bm != null) {
 								Program.LoncherSettings.Icon = Icon.FromHandle(bm.GetHicon());
@@ -396,14 +459,14 @@ namespace YobaLoncher {
 						if (Program.LoncherSettings.Icon == null) {
 							Program.LoncherSettings.Icon = this.Icon;
 						}
-						if (await assertFile(raw.PreloaderBackground, IMGPATH, BG_FILE)) {
+						if (await assertFile(launcherDataRaw.PreloaderBackground, IMGPATH, BG_FILE)) {
 							this.BackgroundImage = YU.readBitmap(BG_FILE);
 						}
 						bool gotRandomBG = false;
-						if (raw.RandomBackgrounds != null && raw.RandomBackgrounds.Count > 0) {
+						if (launcherDataRaw.RandomBackgrounds != null && launcherDataRaw.RandomBackgrounds.Count > 0) {
 							int randomBGRoll = new Random().Next(0, 1000);
 							int totalRoll = 0;
-							foreach (RandomBgImageInfo rbgi in raw.RandomBackgrounds) {
+							foreach (RandomBgImageInfo rbgi in launcherDataRaw.RandomBackgrounds) {
 								if (await assertFile(rbgi.Background, IMGPATH)) {
 									totalRoll += rbgi.Chance;
 									if (totalRoll > randomBGRoll) {
@@ -414,8 +477,8 @@ namespace YobaLoncher {
 								}
 							}
 						}
-						if (!gotRandomBG && await assertFile(raw.Background, IMGPATH)) {
-							Program.LoncherSettings.Background = YU.readBitmap(IMGPATH + raw.Background.Path);
+						if (!gotRandomBG && await assertFile(launcherDataRaw.Background, IMGPATH)) {
+							Program.LoncherSettings.Background = YU.readBitmap(IMGPATH + launcherDataRaw.Background.Path);
 						}
 
 						if (Program.LoncherSettings.UI.Count > 0) {
@@ -495,9 +558,11 @@ namespace YobaLoncher {
 					}
 					try {
 						loadingLabel.Text = Locale.Get("PreparingToLaunch");
-						await Program.LoncherSettings.InitChangelog();
+						//await Program.LoncherSettings.InitChangelogOnline();
+						Program.LoncherSettings.Changelog = await getStaticTabData("Changelog", launcherDataRaw.Changelog, launcherDataRaw.QuoteToEscape, "[[[CHANGELOG]]]");
+						Program.LoncherSettings.FAQ = await getStaticTabData("FAQ", launcherDataRaw.FAQFile, launcherDataRaw.QuoteToEscape, "[[[FAQTEXT]]]");
 						incProgress(5);
-						logDeltaTicks("changelog");
+						logDeltaTicks("changelog and etc");
 						//loadingLabel.Text = Locale.Get("PreparingToLaunch");
 						try {
 							if (findGamePath()) {
@@ -603,9 +668,9 @@ namespace YobaLoncher {
 				Program.OfflineMode = true;
 				string settingsJson = File.ReadAllText(SETTINGSPATH);
 				Program.LoncherSettings = new LauncherData(settingsJson);
+				LauncherData.LauncherDataRaw launcherDataRaw = Program.LoncherSettings.RAW;
 				incProgress(10);
 				try {
-					LauncherData.LauncherDataRaw raw = Program.LoncherSettings.RAW;
 					try {
 						if (File.Exists(LOCPATH)) {
 							Locale.LoadCustomLoc(File.ReadAllLines(LOCPATH, Encoding.UTF8));
@@ -614,17 +679,17 @@ namespace YobaLoncher {
 					catch (Exception ex) {
 						YobaDialog.ShowDialog(Locale.Get("CannotGetLocaleFile") + ":\r\n" + ex.Message);
 					}
-					if (assertOfflineFile(raw.Background, IMGPATH)) {
-						Program.LoncherSettings.Background = YU.readBitmap(IMGPATH + raw.Background.Path);
+					if (assertOfflineFile(launcherDataRaw.Background, IMGPATH)) {
+						Program.LoncherSettings.Background = YU.readBitmap(IMGPATH + launcherDataRaw.Background.Path);
 					}
-					if (assertOfflineFile(raw.Icon, IMGPATH, ICON_FILE)) {
-						Bitmap bm = YU.readBitmap(IMGPATH + raw.Icon.Path);
+					if (assertOfflineFile(launcherDataRaw.Icon, IMGPATH, ICON_FILE)) {
+						Bitmap bm = YU.readBitmap(IMGPATH + launcherDataRaw.Icon.Path);
 						if (bm != null) {
 							Program.LoncherSettings.Icon = Icon.FromHandle(bm.GetHicon());
 						}
 					}
-					if (assertOfflineFile(raw.PreloaderBackground, IMGPATH, BG_FILE)) {
-						this.BackgroundImage = YU.readBitmap(IMGPATH + raw.PreloaderBackground.Path);
+					if (assertOfflineFile(launcherDataRaw.PreloaderBackground, IMGPATH, BG_FILE)) {
+						this.BackgroundImage = YU.readBitmap(IMGPATH + launcherDataRaw.PreloaderBackground.Path);
 					}
 					if (Program.LoncherSettings.Icon == null) {
 						Program.LoncherSettings.Icon = this.Icon;
@@ -678,6 +743,9 @@ namespace YobaLoncher {
 				}
 				try {
 					try {
+						Program.LoncherSettings.Changelog = getStaticTabDataOffline("Changelog", launcherDataRaw.Changelog, launcherDataRaw.QuoteToEscape, "[[[CHANGELOG]]]");
+						Program.LoncherSettings.FAQ = getStaticTabDataOffline("FAQ", launcherDataRaw.FAQFile, launcherDataRaw.QuoteToEscape, "[[[FAQTEXT]]]");
+						
 						if (findGamePath()) {
 							try {
 								updateGameVersion();

@@ -34,6 +34,10 @@ namespace YobaLoncher {
 		private long lastDlstringUpdate_ = -1;
 		private string statusListClass_ = "";
 
+		private Panel[] uiPanels_;
+
+		WebClient wc_;
+
 		[ComVisible(true)]
 		public class StatusController {
 			public class SFileInfo {
@@ -172,6 +176,10 @@ namespace YobaLoncher {
 
 			SuspendLayout();
 
+			wc_ = new WebClient();
+			wc_.DownloadProgressChanged += new DownloadProgressChangedEventHandler(OnDownloadProgressChanged);
+			wc_.DownloadFileCompleted += new AsyncCompletedEventHandler(OnDownloadCompleted);
+
 			int missingFilesCount = Program.GameFileCheckResult.InvalidFiles.Count;
 
 			if (missingFilesCount > 0) {
@@ -195,6 +203,7 @@ namespace YobaLoncher {
 			changelogMenuBtn.Text = Locale.Get("ChangelogBtn");
 			linksButton.Text = Locale.Get("LinksBtn");
 			settingsButton.Text = Locale.Get("SettingsBtn");
+			faqButton.Text = Locale.Get("FAQBtn");
 			statusButton.Text = Locale.Get("StatusBtn");
 			modsButton.Text = Locale.Get("ModsBtn");
 			Text = Locale.Get("MainFormTitle");
@@ -205,32 +214,17 @@ namespace YobaLoncher {
 			theToolTip.SetToolTip(statusButton, Locale.Get("StatusTooltip"));
 			theToolTip.SetToolTip(linksButton, Locale.Get("LinksTooltip"));
 			theToolTip.SetToolTip(settingsButton, Locale.Get("SettingsTooltip"));
+			theToolTip.SetToolTip(faqButton, Locale.Get("FAQTooltip"));
 			theToolTip.SetToolTip(modsButton, Locale.Get("ModsTooltip"));
 
-			changelogPanel.Location = new Point(0, 0);
-			changelogPanel.Size = new Size(610, 330);
-			modsPanel.Location = new Point(0, 0);
-			modsPanel.Size = new Size(610, 330);
-			linksPanel.Location = new Point(0, 0);
-			linksPanel.Size = new Size(610, 330);
-			statusPanel.Location = new Point(0, 0);
-			statusPanel.Size = new Size(610, 330);
+			uiPanels_ = new Panel[] { changelogPanel, statusPanel, linksPanel, modsPanel, faqPanel };
 
-			if (Program.OfflineMode) {
-				changelogPanel.Controls.Remove(changelogBrowser);
-				loncherIsOfflineLable.Text = Locale.Get("LauncherIsInOfflineMode");
+			foreach (Panel p in uiPanels_) {
+				p.Location = new Point(0, 0);
+				p.Size = new Size(610, 330);
 			}
-			else {
-				changelogPanel.Controls.Remove(loncherIsOfflineLable);
-				changelogBrowser.Location = new Point(0, 0);
-				changelogBrowser.Size = new Size(610, 330);
-				if (Program.LoncherSettings.ChangelogSite.Length > 0) {
-					changelogBrowser.Url = new Uri(Program.LoncherSettings.ChangelogSite);
-				}
-				else {
-					changelogBrowser.DocumentText = Program.LoncherSettings.ChangelogHtml;//"data:text/html;charset=UTF-8," + 
-				}
-			}
+
+			UpdateInfoWebViews();
 
 			statusBrowser.Size = new Size(610, 330);
 			statusBrowser.Location = new Point(0, 0);
@@ -255,13 +249,13 @@ namespace YobaLoncher {
 				}
 			}
 			string[] menuScreenKeys = new string[] {
-				"BasePanel", "StatusPanel", "LinksPanel", "ModsPanel", "ChangelogPanel"//
+				"BasePanel", "StatusPanel", "LinksPanel", "ModsPanel", "ChangelogPanel", "FAQPanel"
 			};
 			string[] menuBtnKeys = new string[] {
-				"LaunchButton", "SettingsButton", "StatusButton", "LinksButton", "ChangelogButton", "ModsButton", "CloseButton", "MinimizeButton"
+				"LaunchButton", "SettingsButton", "StatusButton", "LinksButton", "ChangelogButton", "ModsButton", "FAQButton", "CloseButton", "MinimizeButton"
 			};
 			string[] menuBtnControlKeys = new string[] {
-				"launchGameButton", "settingsButton", "statusButton", "linksButton", "changelogMenuBtn", "modsButton", "closeButton", "minimizeButton"
+				"launchGameButton", "settingsButton", "statusButton", "linksButton", "changelogMenuBtn", "modsButton", "faqButton", "closeButton", "minimizeButton"
 			};
 			for (int i = 0; i < menuBtnKeys.Length; i++) {
 				string menuBtnKey = menuBtnKeys[i];
@@ -351,9 +345,85 @@ namespace YobaLoncher {
 				case StartPageEnum.Links:
 					linksPanel.Visible = true;
 					break;
+				case StartPageEnum.FAQ:
+					faqPanel.Visible = true;
+					break;
 			}
 
 			PerformLayout();
+		}
+
+		private void UpdateInfoWebViews() {
+			bool hasChangelog = false, hasFaq = false;
+			if (Program.OfflineMode) {
+				if (Program.LoncherSettings.Changelog.Html is null) {
+					changelogLoncherIsOfflineLable.Text = Locale.Get("LauncherIsInOfflineMode");
+				}
+				else {
+					changelogBrowser.DocumentText = Program.LoncherSettings.Changelog.Html;
+					hasChangelog = true;
+				}
+				if (Program.LoncherSettings.FAQ.Html is null) {
+					faqLoncherIsOfflineLable.Text = Locale.Get("LauncherIsInOfflineMode");
+				}
+				else {
+					faqBrowser.DocumentText = Program.LoncherSettings.FAQ.Html;
+					hasFaq = true;
+				}
+			}
+			else {
+				if (Program.LoncherSettings.Changelog.Error != null) {
+					changelogLoncherIsOfflineLable.Text = Locale.Get(Program.LoncherSettings.Changelog.Error);
+				}
+				else {
+					if (Program.LoncherSettings.Changelog.Html != null) {
+						changelogBrowser.DocumentText = Program.LoncherSettings.Changelog.Html;//"data:text/html;charset=UTF-8," + 
+						hasChangelog = true;
+					}
+					else if (Program.LoncherSettings.Changelog.Site.Length > 0) {
+						changelogBrowser.Url = new Uri(Program.LoncherSettings.Changelog.Site);
+						hasChangelog = true;
+					}
+					else {
+						changelogLoncherIsOfflineLable.Text = Locale.Get("ChangelogFileUnavailable");
+					}
+				}
+				if (Program.LoncherSettings.FAQ.Error != null) {
+					faqLoncherIsOfflineLable.Text = Locale.Get(Program.LoncherSettings.FAQ.Error);
+				}
+				else {
+					if (Program.LoncherSettings.FAQ.Html != null) {
+						faqBrowser.DocumentText = Program.LoncherSettings.FAQ.Html;//"data:text/html;charset=UTF-8," + 
+						hasFaq = true;
+					}
+					else if (Program.LoncherSettings.FAQ.Site.Length > 0) {
+						faqBrowser.Url = new Uri(Program.LoncherSettings.FAQ.Site);
+						hasFaq = true;
+					}
+					else {
+						faqLoncherIsOfflineLable.Text = Locale.Get("FAQFileUnavailable");
+					}
+				}
+			}
+
+			if (hasChangelog) {
+				//changelogPanel.Controls.Remove(changelogLoncherIsOfflineLable);
+				changelogLoncherIsOfflineLable.Visible = false;
+				changelogBrowser.Location = new Point(0, 0);
+				changelogBrowser.Size = new Size(610, 330);
+			}
+			else {
+				//changelogPanel.Controls.Remove(changelogBrowser);
+				changelogBrowser.Visible = false;
+			}
+			if (hasFaq) {
+				faqLoncherIsOfflineLable.Visible = false;
+				faqBrowser.Location = new Point(0, 0);
+				faqBrowser.Size = new Size(610, 330);
+			}
+			else {
+				faqBrowser.Visible = false;
+			}
 		}
 
 		private void UpdateStatusWebView() {
@@ -486,10 +556,7 @@ namespace YobaLoncher {
 					File.Delete(uploadFilename);
 				}
 			}
-			using (WebClient webClient = new WebClient()) {
-				try {
-					webClient.DownloadProgressChanged += new DownloadProgressChangedEventHandler(OnDownloadProgressChanged);
-					webClient.DownloadFileCompleted += new AsyncCompletedEventHandler(OnDownloadCompleted);
+			try {
 					updateProgressBar.Value = 0;
 					updateLabelText.Text = string.Format(
 						Locale.Get("DLRate")
@@ -498,12 +565,11 @@ namespace YobaLoncher {
 						, ""
 						, currentFile_.Value.Description
 					);
-					await webClient.DownloadFileTaskAsync(new Uri(fileInfo.Url), uploadFilename);
+					await wc_.DownloadFileTaskAsync(new Uri(fileInfo.Url), uploadFilename);
 				}
 				catch (Exception ex) {
 					ShowDownloadError(string.Format(Locale.Get("CannotDownloadFile"), fileInfo.Path) + "\r\n" + ex.Message);
 				}
-			}
 		}
 
 		private void OnDownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e) {
@@ -605,9 +671,11 @@ namespace YobaLoncher {
 			}
 		}
 		private void CheckReady() {
-			foreach (FileInfo fi in filesToUpload_) {
-				if (fi.IsCheckedToDl) {
-					return;
+			if (filesToUpload_ != null) {
+				foreach (FileInfo fi in filesToUpload_) {
+					if (fi.IsCheckedToDl) {
+						return;
+					}
 				}
 			}
 			SetReady(true);
@@ -696,31 +764,29 @@ namespace YobaLoncher {
 		}
 
 		private void changelogMenuBtn_Click(object sender, EventArgs e) {
-			linksPanel.Visible = false;
-			statusPanel.Visible = false;
-			modsPanel.Visible = false;
-			changelogPanel.Visible = true;
+			showUIPanel(changelogPanel);
 		}
 
 		private void checkResultMenuBtn_Click(object sender, EventArgs e) {
-			linksPanel.Visible = false;
-			statusPanel.Visible = true;
-			modsPanel.Visible = false;
-			changelogPanel.Visible = false;
+			showUIPanel(statusPanel);
 		}
 
 		private void linksMenuBtn_Click(object sender, EventArgs e) {
-			linksPanel.Visible = true;
-			statusPanel.Visible = false;
-			modsPanel.Visible = false;
-			changelogPanel.Visible = false;
+			showUIPanel(linksPanel);
 		}
 
 		private void modsButton_Click(object sender, EventArgs e) {
-			linksPanel.Visible = false;
-			statusPanel.Visible = false;
-			modsPanel.Visible = true;
-			changelogPanel.Visible = false;
+			showUIPanel(modsPanel);
+		}
+		
+		private void faqButton_Click(object sender, EventArgs e) {
+			showUIPanel(faqPanel);
+		}
+
+		private void showUIPanel(Panel panelToShow) {
+			foreach (Panel p in uiPanels_) {
+				p.Visible = p == panelToShow;
+			}
 		}
 
 		private void closeButton_Click(object sender, EventArgs e) {
@@ -738,16 +804,44 @@ namespace YobaLoncher {
 			}
 		}
 
+		private async Task<LauncherData.StaticTabData> getStaticTabData(string uiKey, string url, string quoteToEscape, string replacePlaceholder) {
+			LauncherData.StaticTabData staticTabData = new LauncherData.StaticTabData();
+			staticTabData.Site = url;
+			try {
+				if (Program.LoncherSettings.UIStyle.TryGetValue(uiKey, out FileInfo fileInfo)) {
+					if (fileInfo != null && YU.stringHasText(fileInfo.Url)) {
+						string template = (await wc_.DownloadStringTaskAsync(new Uri(fileInfo.Url)));
+						string cl = "";
+						if (url != null && url.Length > 0) {
+							cl = (await wc_.DownloadStringTaskAsync(new Uri(url)));
+							if (quoteToEscape != null && quoteToEscape.Length > 0) {
+								string quote = quoteToEscape;
+								cl = cl.Replace("\\", "\\\\").Replace(quote, "\\" + quote);
+								if (cl.Contains("\r")) {
+									cl = cl.Replace("\r\n", "\\\r\n");
+								}
+								else {
+									cl = cl.Replace("\n", "\\\n");
+								}
+							}
+						}
+						staticTabData.Html = template.Replace(replacePlaceholder, cl);
+					}
+				}
+			}
+			catch (Exception ex) {
+				staticTabData.Error = ex.Message;
+			}
+			return staticTabData;
+		}
+
 		private async void refreshButton_Click(object sender, EventArgs e) {
 			if (!Program.OfflineMode) {
-				await Program.LoncherSettings.InitChangelog();
-			
-				if (Program.LoncherSettings.ChangelogSite.Length > 0) {
-					changelogBrowser.Url = new Uri(Program.LoncherSettings.ChangelogSite);
-				}
-				else {
-					changelogBrowser.DocumentText = Program.LoncherSettings.ChangelogHtml;
-				}
+				LauncherData.LauncherDataRaw launcherDataRaw = Program.LoncherSettings.RAW;
+				string quote = launcherDataRaw.QuoteToEscape;
+				Program.LoncherSettings.Changelog = await getStaticTabData("Changelog", launcherDataRaw.Changelog, quote, "[[[CHANGELOG]]]");
+				Program.LoncherSettings.FAQ = await getStaticTabData("FAQ", launcherDataRaw.FAQFile, quote, "[[[FAQTEXT]]]");
+				UpdateInfoWebViews();
 			}
 		}
 

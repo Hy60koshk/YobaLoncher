@@ -58,10 +58,12 @@ namespace YobaLoncher {
 			, { "LinksBtn", "Links" }
 			, { "StatusBtn", "Status" }
 			, { "SettingsBtn", "Settings" }
+			, { "FAQBtn", "FAQ" }
 			, { "ChangelogTooltip", "Changelog" }
 			, { "StatusTooltip", "Status" }
 			, { "LinksTooltip", "Links" }
 			, { "SettingsTooltip", "Settings" }
+			, { "FAQTooltip", "FAQ" }
 			, { "Error", "Error" }
 			, { "LoncherLoading", "{0} loading..." }
 			, { "PressF1About", "Press F1 to show About" }
@@ -90,6 +92,8 @@ namespace YobaLoncher {
 			, { "DirectoryAccessDenied", "Cannot move file \"{0}\": Access denied. Restart the Launcher as Administrator." }
 			, { "UpdateSuccessful", "All files are up to date!\r\nShall we start the game now?" }
 			, { "LauncherIsInOfflineMode", "Launcher is in Offline mode" }
+			, { "ChangelogFileUnavailable", "Changelog file is unavailable" }
+			, { "FAQFileUnavailable", "FAQ file is unavailable" }
 			, { "ModsBtn", "Mods" }
 			, { "ModsTooltip", "Mods" }
 			, { "ModInstallationDone", "Mods installed successfully" }
