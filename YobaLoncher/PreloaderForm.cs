@@ -23,6 +23,7 @@ namespace YobaLoncher {
 		public const string UPDPATH = @"loncherData\updates\";
 		public const string FNTPATH = @"loncherData\fonts\";
 		public const string LOCPATH = @"loncherData\loc";
+		public const string TMPLPATH = @"loncherData\templates\";
 		public const string SETTINGSPATH = @"loncherData\settings";
 
 		public const string BG_FILE = IMGPATH + @"loncherbg.png";
@@ -54,8 +55,7 @@ namespace YobaLoncher {
 					loadingLabelError.Text = Locale.Get("CannotSetIcon");
 				}
 			}
-			wc_ = new WebClient();
-			wc_.Encoding = Encoding.UTF8;
+			wc_ = new WebClient { Encoding = Encoding.UTF8 };
 			Text = Locale.Get("PreloaderTitle");
 			loadingLabel.Text = string.Format(Locale.Get("LoncherLoading"), Program.LoncherName);
 			labelAbout.Text = Locale.Get("PressF1About");
@@ -151,6 +151,7 @@ namespace YobaLoncher {
 		private async Task<bool> assertFile(FileInfo fi, string dir) {
 			if (fi != null && YU.stringHasText(fi.Path) && YU.stringHasText(fi.Url)) {
 				if (!FileChecker.CheckFileMD5(dir, fi)) {
+					Directory.CreateDirectory(dir);
 					await loadFile(fi.Url, dir + fi.Path);
 				}
 				return true;
@@ -160,6 +161,7 @@ namespace YobaLoncher {
 		private async Task<bool> assertFile(FileInfo fi, string dir, string targetPath) {
 			if (fi != null && YU.stringHasText(fi.Path) && YU.stringHasText(fi.Url)) {
 				if (!FileChecker.CheckFileMD5(dir, fi)) {
+					Directory.CreateDirectory(dir);
 					await loadFile(fi.Url, targetPath);
 				}
 				return true;
@@ -184,12 +186,12 @@ namespace YobaLoncher {
 			staticTabData.Site = url;
 			try {
 				if (Program.LoncherSettings.UIStyle.TryGetValue(uiKey, out FileInfo changelogFileInfo)) {
-					if (await assertFile(changelogFileInfo, Program.LoncherDataPath)) {
-						string changelogTemplate = File.ReadAllText(Program.LoncherDataPath + changelogFileInfo.Path, Encoding.UTF8);
+					if (await assertFile(changelogFileInfo, TMPLPATH)) {
+						string changelogTemplate = File.ReadAllText(TMPLPATH + changelogFileInfo.Path, Encoding.UTF8);
 						string cl = "";
 						if (url != null && url.Length > 0) {
 							cl = (await wc_.DownloadStringTaskAsync(new Uri(url)));
-							File.WriteAllText(Program.LoncherDataPath + "tempLast" + uiKey, cl, Encoding.UTF8);
+							File.WriteAllText(TMPLPATH + "tempLast" + uiKey, cl, Encoding.UTF8);
 							if (quoteToEscape != null && quoteToEscape.Length > 0) {
 								string quote = quoteToEscape;
 								cl = cl.Replace("\\", "\\\\").Replace(quote, "\\" + quote);
@@ -216,11 +218,11 @@ namespace YobaLoncher {
 			staticTabData.Site = url;
 			try {
 				if (Program.LoncherSettings.UIStyle.TryGetValue(uiKey, out FileInfo changelogFileInfo)) {
-					if (assertOfflineFile(changelogFileInfo, Program.LoncherDataPath)) {
-						string changelogTemplate = File.ReadAllText(Program.LoncherDataPath + changelogFileInfo.Path, Encoding.UTF8);
+					if (assertOfflineFile(changelogFileInfo, TMPLPATH)) {
+						string changelogTemplate = File.ReadAllText(TMPLPATH + changelogFileInfo.Path, Encoding.UTF8);
 						string cl = "";
 						if (url != null && url.Length > 0) {
-							cl = File.ReadAllText(Program.LoncherDataPath + "tempLast" + uiKey, Encoding.UTF8);
+							cl = File.ReadAllText(TMPLPATH + "tempLast" + uiKey, Encoding.UTF8);
 							if (quoteToEscape != null && quoteToEscape.Length > 0) {
 								string quote = quoteToEscape;
 								cl = cl.Replace("\\", "\\\\").Replace(quote, "\\" + quote);

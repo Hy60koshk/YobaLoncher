@@ -39,6 +39,7 @@
 			this.settingsButton = new YobaLoncher.YobaButton();
 			this.faqButton = new YobaLoncher.YobaButton();
 			this.closeButton = new YobaLoncher.YobaCloseButton();
+			this.helpButton = new YobaLoncher.YobaCloseButton();
 			this.launchGameButton = new YobaLoncher.YobaButton();
 			this.minimizeButton = new YobaLoncher.YobaCloseButton();
 			this.basePanel = new System.Windows.Forms.Panel();
@@ -81,7 +82,7 @@
 			this.draggingPanel.Location = new System.Drawing.Point(0, 0);
 			this.draggingPanel.Margin = new System.Windows.Forms.Padding(0);
 			this.draggingPanel.Name = "draggingPanel";
-			this.draggingPanel.Size = new System.Drawing.Size(715, 24);
+			this.draggingPanel.Size = new System.Drawing.Size(685, 24);
 			this.draggingPanel.TabIndex = 103;
 			this.draggingPanel.MouseDown += new System.Windows.Forms.MouseEventHandler(this.draggingPanel_MouseDown);
 			// 
@@ -100,6 +101,7 @@
 			this.faqBrowser.Name = "faqBrowser";
 			this.faqBrowser.Size = new System.Drawing.Size(254, 147);
 			this.faqBrowser.TabIndex = 105;
+			this.faqBrowser.Navigating += new System.Windows.Forms.WebBrowserNavigatingEventHandler(this.webBrowser_Navigating);
 			// 
 			// statusPanel
 			// 
@@ -265,10 +267,29 @@
 			this.minimizeButton.Margin = new System.Windows.Forms.Padding(0);
 			this.minimizeButton.Name = "minimizeButton";
 			this.minimizeButton.Size = new System.Drawing.Size(32, 24);
-			this.minimizeButton.TabIndex = 100;
+			this.minimizeButton.TabIndex = 101;
 			this.minimizeButton.Text = "_";
 			this.minimizeButton.UseVisualStyleBackColor = false;
 			this.minimizeButton.Click += new System.EventHandler(this.minimizeButton_Click);
+			// 
+			// helpButton
+			// 
+			this.helpButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(62)))), ((int)(((byte)(63)))), ((int)(((byte)(64)))));
+			this.helpButton.DialogResult = System.Windows.Forms.DialogResult.Abort;
+			this.helpButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
+			this.helpButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(11)))));
+			this.helpButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+			this.helpButton.Font = new System.Drawing.Font("Lucida Console", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, ((byte)(204)));
+			this.helpButton.ForeColor = System.Drawing.Color.White;
+			this.helpButton.Location = new System.Drawing.Point(690, -2);
+			this.helpButton.Margin = new System.Windows.Forms.Padding(0);
+			this.helpButton.Name = "helpButton";
+			this.helpButton.Size = new System.Drawing.Size(32, 24);
+			this.helpButton.TabIndex = 102;
+			this.helpButton.Text = "?";
+			this.helpButton.UseVisualStyleBackColor = false;
+			this.helpButton.Click += new System.EventHandler(this.helpButton_Click);
+			this.helpButton.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
 			// 
 			// basePanel
 			// 
@@ -398,6 +419,7 @@
 			this.Controls.Add(this.updateLabelText);
 			this.Controls.Add(this.updateProgressBar);
 			this.Controls.Add(this.minimizeButton);
+			this.Controls.Add(this.helpButton);
 			this.Controls.Add(this.basePanel);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
 			this.Name = "MainForm";
@@ -416,6 +438,10 @@
 
 		}
 
+		private void FaqBrowser_Navigating(object sender, System.Windows.Forms.WebBrowserNavigatingEventArgs e) {
+			throw new System.NotImplementedException();
+		}
+
 		#endregion
 
 		private YobaProgressBar updateProgressBar;
@@ -423,6 +449,7 @@
 		private YobaButton launchGameButton;
 		private YobaCloseButton closeButton;
 		private YobaCloseButton minimizeButton;
+		private YobaCloseButton helpButton;
 		private YobaButton settingsButton;
 		private YobaButton faqButton;
 		private YobaButton linksButton;

@@ -36,6 +36,8 @@ namespace YobaLoncher {
 
 		private Panel[] uiPanels_;
 
+		private Dictionary<WebBrowser, bool> allowUrlsInEmbeddedBrowser = new Dictionary<WebBrowser, bool>();
+
 		WebClient wc_;
 
 		[ComVisible(true)]
@@ -175,10 +177,11 @@ namespace YobaLoncher {
 			NativeWinAPI.SetWindowLong(basePanel.Handle, NativeWinAPI.GWL_EXSTYLE, winstyle | NativeWinAPI.WS_EX_COMPOSITED);
 
 			SuspendLayout();
-
-			wc_ = new WebClient();
+			
+			wc_ = new WebClient { Encoding = Encoding.UTF8 };
 			wc_.DownloadProgressChanged += new DownloadProgressChangedEventHandler(OnDownloadProgressChanged);
 			wc_.DownloadFileCompleted += new AsyncCompletedEventHandler(OnDownloadCompleted);
+			downloadProgressTracker_ = new DownloadProgressTracker(50, TimeSpan.FromMilliseconds(500));
 
 			int missingFilesCount = Program.GameFileCheckResult.InvalidFiles.Count;
 
@@ -224,6 +227,11 @@ namespace YobaLoncher {
 				p.Size = new Size(610, 330);
 			}
 
+			allowUrlsInEmbeddedBrowser.Add(statusBrowser, false);
+			allowUrlsInEmbeddedBrowser.Add(modsBrowser, false);
+			allowUrlsInEmbeddedBrowser.Add(faqBrowser, false);
+			allowUrlsInEmbeddedBrowser.Add(changelogBrowser, false);
+
 			UpdateInfoWebViews();
 
 			statusBrowser.Size = new Size(610, 330);
@@ -252,10 +260,10 @@ namespace YobaLoncher {
 				"BasePanel", "StatusPanel", "LinksPanel", "ModsPanel", "ChangelogPanel", "FAQPanel"
 			};
 			string[] menuBtnKeys = new string[] {
-				"LaunchButton", "SettingsButton", "StatusButton", "LinksButton", "ChangelogButton", "ModsButton", "FAQButton", "CloseButton", "MinimizeButton"
+				"LaunchButton", "SettingsButton", "StatusButton", "LinksButton", "ChangelogButton", "ModsButton", "FAQButton", "CloseButton", "MinimizeButton", "HelpButton"
 			};
 			string[] menuBtnControlKeys = new string[] {
-				"launchGameButton", "settingsButton", "statusButton", "linksButton", "changelogMenuBtn", "modsButton", "faqButton", "closeButton", "minimizeButton"
+				"launchGameButton", "settingsButton", "statusButton", "linksButton", "changelogMenuBtn", "modsButton", "faqButton", "closeButton", "minimizeButton", "helpButton"
 			};
 			for (int i = 0; i < menuBtnKeys.Length; i++) {
 				string menuBtnKey = menuBtnKeys[i];
@@ -355,6 +363,8 @@ namespace YobaLoncher {
 
 		private void UpdateInfoWebViews() {
 			bool hasChangelog = false, hasFaq = false;
+			allowUrlsInEmbeddedBrowser[changelogBrowser] = true;
+			allowUrlsInEmbeddedBrowser[faqBrowser] = true;
 			if (Program.OfflineMode) {
 				if (Program.LoncherSettings.Changelog.Html is null) {
 					changelogLoncherIsOfflineLable.Text = Locale.Get("LauncherIsInOfflineMode");
@@ -709,7 +719,6 @@ namespace YobaLoncher {
 				while ((currentFile_ != null) && !currentFile_.Value.IsCheckedToDl) {
 					currentFile_ = currentFile_.Next;
 				}
-				downloadProgressTracker_ = new DownloadProgressTracker(50, TimeSpan.FromMilliseconds(500));
 				DownloadFile(currentFile_.Value);
 			}
 		}
@@ -810,22 +819,24 @@ namespace YobaLoncher {
 			try {
 				if (Program.LoncherSettings.UIStyle.TryGetValue(uiKey, out FileInfo fileInfo)) {
 					if (fileInfo != null && YU.stringHasText(fileInfo.Url)) {
-						string template = (await wc_.DownloadStringTaskAsync(new Uri(fileInfo.Url)));
-						string cl = "";
-						if (url != null && url.Length > 0) {
-							cl = (await wc_.DownloadStringTaskAsync(new Uri(url)));
-							if (quoteToEscape != null && quoteToEscape.Length > 0) {
-								string quote = quoteToEscape;
-								cl = cl.Replace("\\", "\\\\").Replace(quote, "\\" + quote);
-								if (cl.Contains("\r")) {
-									cl = cl.Replace("\r\n", "\\\r\n");
-								}
-								else {
-									cl = cl.Replace("\n", "\\\n");
+						using (WebClient wc = new WebClient { Encoding = Encoding.UTF8 }) {
+							string template = (await wc.DownloadStringTaskAsync(new Uri(fileInfo.Url)));
+							string cl = "";
+							if (url != null && url.Length > 0) {
+								cl = (await wc.DownloadStringTaskAsync(new Uri(url)));
+								if (quoteToEscape != null && quoteToEscape.Length > 0) {
+									string quote = quoteToEscape;
+									cl = cl.Replace("\\", "\\\\").Replace(quote, "\\" + quote);
+									if (cl.Contains("\r")) {
+										cl = cl.Replace("\r\n", "\\\r\n");
+									}
+									else {
+										cl = cl.Replace("\n", "\\\n");
+									}
 								}
 							}
+							staticTabData.Html = template.Replace(replacePlaceholder, cl);
 						}
-						staticTabData.Html = template.Replace(replacePlaceholder, cl);
 					}
 				}
 			}
@@ -843,6 +854,10 @@ namespace YobaLoncher {
 				Program.LoncherSettings.FAQ = await getStaticTabData("FAQ", launcherDataRaw.FAQFile, quote, "[[[FAQTEXT]]]");
 				UpdateInfoWebViews();
 			}
+		}
+
+		private void helpButton_Click(object sender, EventArgs e) {
+			YU.ShowHelpDialog();
 		}
 
 		private void MainForm_Shown(object sender, EventArgs e) {
@@ -867,6 +882,22 @@ namespace YobaLoncher {
 						LauncherConfig.Save();
 					}
 				}
+			}
+		}
+
+		private void webBrowser_Navigating(object sender, WebBrowserNavigatingEventArgs e) {
+			if (allowUrlsInEmbeddedBrowser[(WebBrowser)sender]) {
+				allowUrlsInEmbeddedBrowser[(WebBrowser)sender] = false;
+				return;
+			}
+			string url = e.Url.ToString();
+			string urlstart = url.Substring(0, 7);
+			switch (urlstart) {
+				case "http://":
+				case "https:/":
+					Process.Start(url);
+					e.Cancel = true;
+					break;
 			}
 		}
 	}
