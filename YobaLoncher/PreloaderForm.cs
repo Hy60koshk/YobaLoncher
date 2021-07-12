@@ -595,9 +595,9 @@ namespace YobaLoncher {
 									);
 
 									foreach (ModInfo mi in Program.LoncherSettings.Mods) {
-										if (mi.CfgInfo != null) {
+										if (mi.ModConfigurationInfo != null) {
 											await FileChecker.CheckFiles(
-												mi.CurrentVersion
+												mi.CurrentVersionFiles
 												, new EventHandler<FileCheckedEventArgs>((object o, FileCheckedEventArgs a) => {
 													_progressBar1.Value += progressBarPerFile;
 													if (_progressBar1.Value > 100) {
@@ -754,8 +754,8 @@ namespace YobaLoncher {
 								incProgress(10);
 								Program.GameFileCheckResult = FileChecker.CheckFilesOffline(Program.LoncherSettings.Files);
 								foreach (ModInfo mi in Program.LoncherSettings.Mods) {
-									if (mi.CfgInfo != null) {
-										FileChecker.CheckFilesOffline(mi.CurrentVersion);
+									if (mi.ModConfigurationInfo != null) {
+										FileChecker.CheckFilesOffline(mi.CurrentVersionFiles);
 									}
 								}
 								showMainForm();

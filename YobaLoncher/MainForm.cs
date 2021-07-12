@@ -101,10 +101,10 @@ namespace YobaLoncher {
 			private async Task InstallModAsync(string id) {
 				ModInfo mi = ModMap[id];
 				uint size = 0;
-				if (mi.CurrentVersion[0].Size == 0) {
-					await FileChecker.CheckFiles(mi.CurrentVersion);
+				if (mi.CurrentVersionFiles[0].Size == 0) {
+					await FileChecker.CheckFiles(mi.CurrentVersionFiles);
 				}
-				foreach (FileInfo fi in mi.CurrentVersion) {
+				foreach (FileInfo fi in mi.CurrentVersionFiles) {
 					if (!fi.IsOK) {
 						size += fi.Size;
 					}
@@ -119,7 +119,7 @@ namespace YobaLoncher {
 				}
 				if (DialogResult.Yes == YobaDialog.ShowDialog(String.Format(Locale.Get("AreYouSureInstallMod"), mi.Name, size, sizeUnits[sizePow]), YobaDialog.YesNoBtns)) {
 					if (Form.modFilesToUpload_ is null) {
-						Form.modFilesToUpload_ = new LinkedList<FileInfo>(mi.CurrentVersion);
+						Form.modFilesToUpload_ = new LinkedList<FileInfo>(mi.CurrentVersionFiles);
 						mi.DlInProgress = true;
 						Form.UpdateModsWebView();
 						if (!Form.UpdateInProgress_) {
@@ -127,7 +127,7 @@ namespace YobaLoncher {
 						}
 					}
 					else {
-						foreach (FileInfo fi in mi.CurrentVersion) {
+						foreach (FileInfo fi in mi.CurrentVersionFiles) {
 							Form.modFilesToUpload_.AddLast(fi);
 						}
 						mi.DlInProgress = true;
@@ -358,6 +358,90 @@ namespace YobaLoncher {
 					break;
 			}
 
+			List<ModInfo> outdatedMods = new List<ModInfo>();
+			LinkedList<FileInfo> outdatedModFiles = new LinkedList<FileInfo>();
+			LinkedList<FileInfo> outdatedAlteredModFiles = new LinkedList<FileInfo>();
+
+			foreach (ModInfo mi in Program.LoncherSettings.Mods) {
+				if (mi.CurrentVersionFiles != null) {
+					if ((mi.ModConfigurationInfo != null) && mi.ModConfigurationInfo.Active) {
+						bool hasit = false;
+						foreach (FileInfo mif in mi.CurrentVersionFiles) {
+							if (!mif.IsOK) {
+								outdatedModFiles.AddLast(mif);
+								if (!hasit) {
+									outdatedMods.Add(mi);
+									hasit = true;
+								}
+								if (mi.ModConfigurationInfo.Altered) {
+									outdatedAlteredModFiles.AddLast(mif);
+								}
+							}
+						}
+						if (hasit) {
+							outdatedModFiles.Last.Value.LastFileOfModToUpdate = mi;
+						}
+					}
+				}
+			}
+			if (outdatedMods.Count > 0) {
+				string outdatedmods = "";
+				string alteredmods = "";
+				List<ModInfo> alteredOutdatedMods = new List<ModInfo>();
+				ulong outdatedmodssize = 0;
+				bool comma = false;
+				bool altcomma = false;
+				foreach (ModInfo mi in outdatedMods) {
+					if (!comma) {
+						comma = true;
+					}
+					else {
+						outdatedmods += ", ";
+					}
+					outdatedmods += mi.CurrentVersionData.Name ?? mi.Name;
+					if (mi.ModConfigurationInfo.Altered) {
+						if (!altcomma) {
+							altcomma = true;
+						}
+						else {
+							alteredmods += ", ";
+						}
+						alteredOutdatedMods.Add(mi);
+						alteredmods += mi.CurrentVersionData.Name ?? mi.Name;
+					}
+				}
+				foreach (FileInfo mif in outdatedModFiles) {
+					outdatedmodssize += mif.Size;
+				}
+				if (DialogResult.Yes == YobaDialog.ShowDialog(String.Format(Locale.Get("YouHaveOutdatedMods"), outdatedmods, YU.formatFileSize(outdatedmodssize)), YobaDialog.YesNoBtns)) {
+					modFilesToUpload_ = outdatedModFiles;
+					foreach (ModInfo mi in outdatedMods) {
+						mi.DlInProgress = true;
+					}
+					UpdateModsWebView();
+					if (!UpdateInProgress_) {
+						DownloadNextMod();
+					}
+				}
+				else {
+					if (alteredOutdatedMods.Count > 0) {
+						ulong alteredmodssize = 0;
+						foreach (FileInfo mif in outdatedAlteredModFiles) {
+							alteredmodssize += mif.Size;
+						}
+						if (DialogResult.Yes == YobaDialog.ShowDialog(String.Format(Locale.Get("YouHaveAlteredMods"), alteredmods, YU.formatFileSize(alteredmodssize)), YobaDialog.YesNoBtns)) {
+							modFilesToUpload_ = outdatedAlteredModFiles;
+							foreach (ModInfo mi in alteredOutdatedMods) {
+								mi.DlInProgress = true;
+							}
+							UpdateModsWebView();
+							if (!UpdateInProgress_) {
+								DownloadNextMod();
+							}
+						}
+					}
+				}
+			}
 			PerformLayout();
 		}
 
@@ -509,7 +593,7 @@ namespace YobaLoncher {
 			int finum = 0;
 
 			foreach (ModInfo mi in Program.LoncherSettings.Mods) {
-				if (mi.CurrentVersion != null) {
+				if (mi.CurrentVersionFiles != null) {
 					string id = "modId" + finum++;
 					ModsController.Instance.ModMap.Add(id, mi);
 					string buttons;
@@ -517,10 +601,10 @@ namespace YobaLoncher {
 					if (mi.DlInProgress) {
 						buttons = String.Format("<div class='loading'>{0}</div>", Locale.Get("ModInstallationInProgress"));
 					}
-					else if (mi.CfgInfo is null) {
+					else if (mi.ModConfigurationInfo is null) {
 						buttons = String.Format("<div class='modControlButton install'>{0}</div>", Locale.Get("InstallMod"));
 					}
-					else if (mi.CfgInfo.Active) {
+					else if (mi.ModConfigurationInfo.Active) {
 						statusSb.Append(" installed active");
 						buttons = String.Format("<div class='modControlButton disable'>{0}</div><div class='modControlButton uninstall'>{1}</div>"
 							, Locale.Get("DisableMod"), Locale.Get("UninstallMod"));
@@ -530,8 +614,8 @@ namespace YobaLoncher {
 						buttons = String.Format("<div class='modControlButton enable'>{0}</div><div class='modControlButton uninstall'>{1}</div>"
 							, Locale.Get("EnableMod"), Locale.Get("UninstallMod"));
 					}
-					statusSb.Append("' id='").Append(id).Append("'><div class='modTitle'>").Append(mi.Name)
-							.Append("</div><div class='modDesc'>").Append(mi.Description)
+					statusSb.Append("' id='").Append(id).Append("'><div class='modTitle'>").Append(mi.CurrentVersionData.Name ?? mi.Name)
+							.Append("</div><div class='modDesc'>").Append(mi.CurrentVersionData.Description ?? mi.Description)
 							.Append("</div><div class='modControls'>").Append(buttons).Append("</div></div>");
 				}
 			}

@@ -157,6 +157,18 @@ namespace YobaLoncher {
 			createShortcutBtn.Size = new Size(240, 24);
 			createShortcutBtn.Text = Locale.Get("SettingsCreateShortcut");
 
+			/*YobaButton uninstallRussifierBtn = new YobaButton();
+			createShortcutBtn.MouseClick += CreateShortcutBtn_MouseClick;
+			createShortcutBtn.Location = new Point(20, 366);
+			createShortcutBtn.Size = new Size(240, 24);
+			createShortcutBtn.Text = Locale.Get("SettingsUninstallMainProduct");
+
+			YobaButton uninstallLoncherBtn = new YobaButton();
+			createShortcutBtn.MouseClick += CreateShortcutBtn_MouseClick;
+			createShortcutBtn.Location = new Point(20, 406);
+			createShortcutBtn.Size = new Size(240, 24);
+			createShortcutBtn.Text = Locale.Get("SettingsUninstallRussifier");*/
+
 			gamePath.TabIndex = 1;
 			browseButton.TabIndex = 2;
 			launchViaGalaxy.TabIndex = 3;

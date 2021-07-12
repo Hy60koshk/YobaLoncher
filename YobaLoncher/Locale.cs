@@ -96,6 +96,8 @@ namespace YobaLoncher {
 			, { "FAQFileUnavailable", "FAQ file is unavailable" }
 			, { "ModsBtn", "Mods" }
 			, { "ModsTooltip", "Mods" }
+			, { "YouHaveOutdatedMods", "New versions of these mods are available: {0}\r\n\r\nWould you like to update them?\r\n({1} are to be downloaded)" }
+			, { "YouHaveAlteredMods", "The file structure of these mods has changed: {0}\r\n\r\nIt is highly recommended to update them. Shall we update them immediately?\r\n({1} are to be downloaded)" }
 			, { "ModInstallationDone", "Mods installed successfully" }
 			, { "NoModsForThisVersion", "There are no mods for your version of the game." }
 			, { "ModInstallationInProgress", "Installing..." }

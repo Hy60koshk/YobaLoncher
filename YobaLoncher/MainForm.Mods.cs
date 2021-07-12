@@ -23,7 +23,7 @@ namespace YobaLoncher {
 		private bool FinalizeModDownload(FileInfo lastFileInfo) {
 			string filename = "";
 			bool success = false;
-			ModInfo modInfo = lastFileInfo.LastFileOfMod;
+			ModInfo modInfo = lastFileInfo.LastFileOfMod ?? lastFileInfo.LastFileOfModToUpdate;
 			updateProgressBar.Value = 100;
 			updateLabelText.Text = Locale.Get("StatusCopyingFiles");
 			try {
@@ -35,6 +35,7 @@ namespace YobaLoncher {
 					currentMod = currentMod.Next;
 					modFilesToUpload_.RemoveFirst();
 				}
+				lastFileInfo.LastFileOfModToUpdate = null;
 				modInfo.Install();
 				success = true;
 			}
@@ -55,7 +56,7 @@ namespace YobaLoncher {
 				currentFile_ = modFilesToUpload_.First;
 				downloadProgressTracker_ = new DownloadProgressTracker(50, TimeSpan.FromMilliseconds(500));
 			}
-			else if (currentFile_.Value.LastFileOfMod != null) {
+			else if (currentFile_.Value.LastFileOfMod != null || currentFile_.Value.LastFileOfModToUpdate != null) {
 				if (!FinalizeModDownload(currentFile_.Value)) {
 					FinishModDownload();
 					return;

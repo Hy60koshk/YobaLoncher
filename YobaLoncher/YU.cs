@@ -19,6 +19,16 @@ namespace YobaLoncher {
 			return s != null && s.Length > 0;
 		}
 
+		private static string[] bytePows = new string[] { "B", "KB", "MB", "GB", "TB", "PB" };
+
+		public static string formatFileSize(ulong size) {
+			int pow = 0;
+			while (size > 1024) {
+				size /= 1024;
+			}
+			return size.ToString() + ' ' + bytePows[pow];
+		}
+
 		public static void Log(string text) {
 #if DEBUG
 			File.AppendAllText(Program.LoncherDataPath + "log.txt", text + "\r\n");
