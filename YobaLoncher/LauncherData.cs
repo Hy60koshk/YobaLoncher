@@ -365,7 +365,9 @@ namespace YobaLoncher {
 				}
 			}
 			else {
-				this.FileGroups.AddRange(seniorVersion.FileGroups);
+				foreach (FileGroup fg in seniorVersion.FileGroups) {
+					this.FileGroups.Add(FileGroup.CopyOf(fg));
+				}
 			}
 			if (this.Files.Count > 0) {
 				foreach (FileInfo file in seniorVersion.Files) {
