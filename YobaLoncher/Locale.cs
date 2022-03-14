@@ -42,6 +42,9 @@ namespace YobaLoncher {
 			, { "OK", "OK" }
 			, { "Yes", "Yes" }
 			, { "No", "No" }
+			, { "ExitApp", "Close program" }
+			, { "Ignore", "Ignore" }
+			, { "CopyStackTrace", "Copy exception info" }
 			, { "Done", "Done" }
 			, { "Proceed", "Proceed" }
 			, { "Cancel", "Cancel" }

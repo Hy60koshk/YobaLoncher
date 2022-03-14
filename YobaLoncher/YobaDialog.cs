@@ -32,6 +32,30 @@ namespace YobaLoncher {
 				Caption = Locale.Get("No"), Result = DialogResult.No
 			}
 		};
+		internal static UIElement[] AbortIgnoreBtns = new UIElement[] {
+			new UIElement() {
+				Caption = Locale.Get("ExitApp"), Result = DialogResult.Abort
+			},
+			new UIElement() {
+				Caption = Locale.Get("Ignore"), Result = DialogResult.Ignore
+			}
+		};
+		internal static UIElement[] OKCopyStackBtns = new UIElement[] {
+			new UIElement() {
+				Caption = Locale.Get("OK")
+				, Result = DialogResult.OK
+				, Size = new Vector() {
+					Y = 38, X = 170
+				}
+			},
+			new UIElement() {
+				Caption = Locale.Get("CopyStackTrace")
+				, Result = DialogResult.Retry
+				, Size = new Vector() {
+					Y = 38, X = 170
+				}
+			}
+		};
 
 		public Label MessageLabel => messageLabel;
 

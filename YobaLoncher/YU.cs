@@ -19,15 +19,26 @@ namespace YobaLoncher {
 			return s != null && s.Length > 0;
 		}
 
-		private static string[] bytePows = new string[] { "B", "KB", "MB", "GB", "TB", "PB" };
+		private static string[] bytePows = new string[] { "B", "KB", "MB", "GB", "TB", "PB", "ЁB" };
 
-		public static string formatFileSize(ulong size) {
+		public static string formatFileSize(double size) {
 			int pow = 0;
 			while (size > 1024) {
 				size /= 1024;
+				pow++;
 			}
-			return size.ToString() + ' ' + bytePows[pow];
+			return Math.Round(size, 1).ToString() + ' ' + bytePows[pow];
 		}
+		/*public static string FormatBytes(long byteCount) {
+			string[] suf = { "B", "KB", "MB", "GB", "TB", "PB", "ЁБ" }; //Longs run out around EB
+			if (byteCount == 0) {
+				return "0" + suf[0];
+			}
+			long bytes = Math.Abs(byteCount);
+			int place = Convert.ToInt32(Math.Floor(Math.Log(bytes, 1024)));
+			double num = Math.Round(bytes / Math.Pow(1024, place), 1);
+			return (Math.Sign(byteCount) * num).ToString() + suf[place];
+		}*/
 
 		public static void Log(string text) {
 #if DEBUG
@@ -148,6 +159,30 @@ namespace YobaLoncher {
 
 		public static void ErrorAndKill(string msg) {
 			if (YobaDialog.ShowDialog(msg) != DialogResult.Ignore) {
+				Application.Exit();
+			}
+		}
+		public static void ErrorAndKill(string msg, bool allowIgnore) {
+			if (allowIgnore) {
+				if (YobaDialog.ShowDialog(msg, YobaDialog.AbortIgnoreBtns) != DialogResult.Ignore) {
+					Application.Exit();
+				}
+			} else {
+				ErrorAndKill(msg);
+			}
+		}
+		public static void ErrorAndKill(string msg, Exception ex) {
+			if (YobaDialog.ShowDialog(msg, YobaDialog.OKCopyStackBtns) == DialogResult.Retry) {
+				string exMsg = "";
+				Exception iex = ex;
+				while (iex != null) {
+					exMsg += iex.Message + "\r\n\r\n";
+					iex = iex.InnerException;
+				}
+				Clipboard.SetText(exMsg + ex.StackTrace);
+				ErrorAndKill(msg, ex);
+			}
+			else {
 				Application.Exit();
 			}
 		}

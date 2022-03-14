@@ -226,11 +226,18 @@ namespace YobaLoncher {
 				p.Location = new Point(0, 0);
 				p.Size = new Size(610, 330);
 			}
+			foreach (WebBrowser wb in new WebBrowser[] { statusBrowser, modsBrowser, faqBrowser, changelogBrowser }) {
+				wb.Navigate("about:blank");
+				wb.Document.Write(String.Empty);
+				allowUrlsInEmbeddedBrowser.Add(wb, false);
+			}
 
-			allowUrlsInEmbeddedBrowser.Add(statusBrowser, false);
-			allowUrlsInEmbeddedBrowser.Add(modsBrowser, false);
-			allowUrlsInEmbeddedBrowser.Add(faqBrowser, false);
-			allowUrlsInEmbeddedBrowser.Add(changelogBrowser, false);
+			
+
+			//allowUrlsInEmbeddedBrowser.Add(statusBrowser, false);
+			//allowUrlsInEmbeddedBrowser.Add(modsBrowser, false);
+			//allowUrlsInEmbeddedBrowser.Add(faqBrowser, false);
+			//allowUrlsInEmbeddedBrowser.Add(changelogBrowser, false);
 
 			UpdateInfoWebViews();
 
@@ -449,6 +456,7 @@ namespace YobaLoncher {
 			bool hasChangelog = false, hasFaq = false;
 			allowUrlsInEmbeddedBrowser[changelogBrowser] = true;
 			allowUrlsInEmbeddedBrowser[faqBrowser] = true;
+			LauncherData ls = Program.LoncherSettings;
 			if (Program.OfflineMode) {
 				if (Program.LoncherSettings.Changelog.Html is null) {
 					changelogLoncherIsOfflineLable.Text = Locale.Get("LauncherIsInOfflineMode");
@@ -471,7 +479,7 @@ namespace YobaLoncher {
 				}
 				else {
 					if (Program.LoncherSettings.Changelog.Html != null) {
-						changelogBrowser.DocumentText = Program.LoncherSettings.Changelog.Html;//"data:text/html;charset=UTF-8," + 
+						changelogBrowser.DocumentText = Program.LoncherSettings.Changelog.Html.Substring(1);//"data:text/html;charset=UTF-8," + 
 						hasChangelog = true;
 					}
 					else if (Program.LoncherSettings.Changelog.Site.Length > 0) {
@@ -651,19 +659,19 @@ namespace YobaLoncher {
 				}
 			}
 			try {
-					updateProgressBar.Value = 0;
-					updateLabelText.Text = string.Format(
-						Locale.Get("DLRate")
-						, FormatBytes(0)
-						, FormatBytes(fileInfo.Size)
-						, ""
-						, currentFile_.Value.Description
-					);
-					await wc_.DownloadFileTaskAsync(new Uri(fileInfo.Url), uploadFilename);
-				}
-				catch (Exception ex) {
-					ShowDownloadError(string.Format(Locale.Get("CannotDownloadFile"), fileInfo.Path) + "\r\n" + ex.Message);
-				}
+				updateProgressBar.Value = 0;
+				updateLabelText.Text = string.Format(
+					Locale.Get("DLRate")
+					, YU.formatFileSize(0)
+					, YU.formatFileSize(fileInfo.Size)
+					, ""
+					, currentFile_.Value.Description
+				);
+				await wc_.DownloadFileTaskAsync(new Uri(fileInfo.Url), uploadFilename);
+			}
+			catch (Exception ex) {
+				ShowDownloadError(string.Format(Locale.Get("CannotDownloadFile"), fileInfo.Path) + "\r\n" + ex.Message);
+			}
 		}
 
 		private void OnDownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e) {
@@ -674,8 +682,8 @@ namespace YobaLoncher {
 				string desc = currentFile_ is null ? "" : currentFile_.Value.Description;
 				updateLabelText.Text = string.Format(
 					Locale.Get("DLRate")
-					, FormatBytes(e.BytesReceived)
-					, FormatBytes(e.TotalBytesToReceive)
+					, YU.formatFileSize(e.BytesReceived)
+					, YU.formatFileSize(e.TotalBytesToReceive)
 					, downloadProgressTracker_.GetBytesPerSecondString()
 					, desc
 				);
@@ -773,16 +781,6 @@ namespace YobaLoncher {
 				}
 			}
 			SetReady(true);
-		}
-
-		public static string FormatBytes(long byteCount) {
-			string[] suf = { "B", "KB", "MB", "GB", "TB", "PB", "ЁБ" }; //Longs run out around EB
-			if (byteCount == 0)
-				return "0" + suf[0];
-			long bytes = Math.Abs(byteCount);
-			int place = Convert.ToInt32(Math.Floor(Math.Log(bytes, 1024)));
-			double num = Math.Round(bytes / Math.Pow(1024, place), 1);
-			return (Math.Sign(byteCount) * num).ToString() + suf[place];
 		}
 
 		private void MainForm_FormClosed(object sender, FormClosedEventArgs e) {

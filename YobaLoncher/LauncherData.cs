@@ -30,6 +30,17 @@ namespace YobaLoncher {
 			FileList = fileList;
 		}
 	}
+	public class LoncherForOSInfo {
+		public string OSName;
+		public string LoncherHash;
+		public string LoncherExe;
+
+		public LoncherForOSInfo(string osName, string loncherExe, string loncherHash) {
+			OSName = osName;
+			LoncherHash = loncherHash;
+			LoncherExe = loncherExe;
+		}
+	}
 	static class LauncherConfig {
 		public static string GameDir = null;
 		public static string GalaxyDir = null;
@@ -154,8 +165,7 @@ namespace YobaLoncher {
 		public string GogID;
 		public StaticTabData Changelog = new StaticTabData();
 		public StaticTabData FAQ = new StaticTabData();
-		public string LoncherHash;
-		public string LoncherExe;
+		public Dictionary<string, LoncherForOSInfo> LoncherVersions;
 		public StartPageEnum StartPage;
 		public SurveyInfo Survey;
 		public Dictionary<string, string> Fonts;
@@ -191,8 +201,7 @@ namespace YobaLoncher {
 			public string Changelog;
 			public string FAQFile;
 			public string QuoteToEscape;
-			public string LoncherHash;
-			public string LoncherExe;
+			public Dictionary<string, LoncherForOSInfo> LoncherVersions;
 			public List<LinkButton> Buttons;
 			public List<RandomBgImageInfo> RandomBackgrounds;
 			public Dictionary<string, UIElement> UI;
@@ -222,11 +231,10 @@ namespace YobaLoncher {
 			UI = raw.UI ?? new Dictionary<string, UIElement>();
 			UIStyle = raw.UIStyle ?? new Dictionary<string, FileInfo>();
 
+			LoncherVersions = raw.LoncherVersions;
 			ExeName = raw.ExeName;
 			SteamID = raw.SteamID;
 			GogID = raw.GogID;
-			LoncherHash = raw.LoncherHash;
-			LoncherExe = raw.LoncherExe;
 			Survey = raw.Survey;
 
 			GameName = raw.GameName;
@@ -243,59 +251,37 @@ namespace YobaLoncher {
 		}
 
 		public Dictionary<string, GameVersion> PrepareGameVersions(List<GameVersion> rawGameVersions) {
-			Dictionary<string, GameVersion> resultingGameVersions = new Dictionary<string, GameVersion>();
+			Dictionary<string, GameVersion> partialGameVersions = new Dictionary<string, GameVersion>();
+			Dictionary<string, GameVersion> mergedGameVersions = new Dictionary<string, GameVersion>();
 			foreach (GameVersion gv in rawGameVersions) {
 				string key = YU.stringHasText(gv.ExeVersion) ? gv.ExeVersion : "DEFAULT";
-				if (resultingGameVersions.ContainsKey(key)) {
+				if (partialGameVersions.ContainsKey(key)) {
 					throw new Exception(string.Format(Locale.Get("MultipleFileBlocksForSingleGameVersion"), key));
 				}
-				resultingGameVersions.Add(key, gv);
+				partialGameVersions.Add(key, gv);
 			}
-			List<string> gvkeys = resultingGameVersions.Keys.ToList();
-			string[] anyKeys = new string[] { "ANY", "=", "DEFAULT" };
+			List<string> gvkeys = partialGameVersions.Keys.ToList();
+			string[] anyKeys = new string[] { "DEFAULT", "ANY", "=" };
 			gvkeys.RemoveAll(s => anyKeys.Contains(s));
 
-			if (gvkeys.Count == 0) {
-				if (!resultingGameVersions.ContainsKey("DEFAULT")) {
-					resultingGameVersions.Add("DEFAULT", new GameVersion());
-				}
-				GameVersion singleGV = resultingGameVersions["DEFAULT"];
-				foreach (string anyKey in anyKeys) {
-					if (resultingGameVersions.ContainsKey(anyKey)) {
-						GameVersion versionToMerge = resultingGameVersions[anyKey];
-						singleGV.FileGroups.AddRange(versionToMerge.FileGroups);
-						singleGV.Files.AddRange(versionToMerge.Files);
-						resultingGameVersions.Remove(anyKey);
-					}
+			GameVersion defaultGV = new GameVersion();
+			foreach (string anyKey in anyKeys) {
+				if (partialGameVersions.ContainsKey(anyKey)) {
+					defaultGV.MergeFrom(partialGameVersions[anyKey]);
 				}
 			}
-			else {
-				foreach (string anyKey in anyKeys) {
-					if (resultingGameVersions.ContainsKey(anyKey)) {
-						GameVersion versionToMerge = resultingGameVersions[anyKey];
-						foreach (string gvkey in gvkeys) {
-							GameVersion targetVersion = resultingGameVersions[gvkey];
-							foreach (FileGroup fg in versionToMerge.FileGroups) {
-								FileGroup targetGroup = targetVersion.FileGroups.Find(x => x.Name == fg.Name);
-								if (targetGroup is null) {
-									targetGroup = FileGroup.CopyOf(fg);
-									targetVersion.FileGroups.Add(targetGroup);
-								}
-								else {
-									targetGroup.Files.AddRange(fg.Files);
-								}
-							}
-							targetVersion.Files.AddRange(versionToMerge.Files);
-						}
-						resultingGameVersions.Remove(anyKey);
-					}
-				}
-			}
+			defaultGV.SortFiles();
+			mergedGameVersions.Add("DEFAULT", defaultGV);
+
 			foreach (string gvkey in gvkeys) {
-				GameVersion gv = resultingGameVersions[gvkey];
-				gv.FileGroups.Sort();
+				GameVersion gv = new GameVersion();
+				gv.MergeFrom(defaultGV);
+				gv.MergeFrom(partialGameVersions[gvkey]);
+				gv.SortFiles();
+				mergedGameVersions.Add(gvkey, gv);
+				
 			}
-			return resultingGameVersions;
+			return mergedGameVersions;
 		}
 
 		public void LoadFileListForVersion(string curVer) {
@@ -339,14 +325,71 @@ namespace YobaLoncher {
 		public List<FileGroup> FileGroups = new List<FileGroup>();
 		public string Name = null;
 		public string Description = null;
+
+		public void SortFiles() {
+			foreach (FileGroup fg in FileGroups) {
+				if (fg.OrderIndex == -99) {
+					fg.OrderIndex = 1;
+				}
+				foreach (FileInfo fi in fg.Files) {
+					if (fi.OrderIndex == -99) {
+						fi.OrderIndex = 1;
+					}
+				}
+				fg.Files.Sort();
+			}
+			FileGroups.Sort();
+		}
+
+		public void MergeFrom(GameVersion seniorVersion) {
+			if (this.FileGroups.Count > 0) {
+				foreach (FileGroup fg in seniorVersion.FileGroups) {
+					FileGroup targetGroup = this.FileGroups.Find(x => x.Name == fg.Name);
+					if (targetGroup is null) {
+						this.FileGroups.Add(FileGroup.CopyOf(fg));
+					}
+					else {
+						if (fg.OrderIndex != -99) {
+							targetGroup.OrderIndex = fg.OrderIndex;
+						}
+						if (targetGroup.Files.Count > 0) {
+							foreach (FileInfo file in fg.Files) {
+								int sameFileIdx = targetGroup.Files.FindIndex(x => x.Path == file.Path);
+								if (sameFileIdx > -1) {
+									targetGroup.Files.RemoveAt(sameFileIdx);
+								}
+							}
+						}
+						targetGroup.Files.AddRange(fg.Files);
+					}
+				}
+			}
+			else {
+				this.FileGroups.AddRange(seniorVersion.FileGroups);
+			}
+			if (this.Files.Count > 0) {
+				foreach (FileInfo file in seniorVersion.Files) {
+					int sameFileIdx = seniorVersion.Files.FindIndex(x => x.Path == file.Path);
+					if (sameFileIdx > -1) {
+						this.Files.RemoveAt(sameFileIdx);
+					}
+				}
+			}
+			this.Files.AddRange(seniorVersion.Files);
+		}
 	}
 	class FileGroup : IComparable<FileGroup> {
 		public string Name = null;
 		public List<FileInfo> Files = new List<FileInfo>();
-		public int OrderIndex = 1;
+		public int OrderIndex = -99;
+		public bool Collapsed = false;
 
 		public int CompareTo(FileGroup fg) {
 			return OrderIndex.CompareTo(fg.OrderIndex);
+		}
+
+		public int CompareTo(FileInfo fi) {
+			return OrderIndex.CompareTo(fi.OrderIndex);
 		}
 
 		public static FileGroup CopyOf(FileGroup fg) {
@@ -384,7 +427,7 @@ namespace YobaLoncher {
 		public string ID;
 		public string Url;
 	}
-	class FileInfo {
+	class FileInfo : IComparable<FileInfo> {
 		public string Url;
 		public string Path;
 		public string Description;
@@ -398,6 +441,14 @@ namespace YobaLoncher {
 		public bool IsCheckedToDl = false;
 		public ModInfo LastFileOfMod;
 		public ModInfo LastFileOfModToUpdate;
+		public int OrderIndex = -99;
+
+		public int CompareTo(FileGroup fg) {
+			return OrderIndex.CompareTo(fg.OrderIndex);
+		}
+		public int CompareTo(FileInfo fi) {
+			return OrderIndex.CompareTo(fi.OrderIndex);
+		}
 
 		public bool IsComplete {
 			get {
@@ -539,21 +590,23 @@ namespace YobaLoncher {
 			LauncherConfig.SaveMods();
 		}
 		private void MoveToDisabled(List<FileInfo> version) {
-			Directory.CreateDirectory(Program.ModsDisabledPath);
-			List<string> disdirs = new List<string>();
-			foreach (FileInfo fi in version) {
-				if (File.Exists(Program.GamePath + fi.Path)) {
-					string path = fi.Path.Replace('/', '\\');
-					bool hasSubdir = path.Contains('\\');
-					path = Program.ModsDisabledPath + path;
-					if (hasSubdir) {
-						string disdir = path.Substring(0, path.LastIndexOf('\\'));
-						if (!disdirs.Contains(disdir)) {
-							Directory.CreateDirectory(disdir);
-							disdirs.Add(disdir);
+			if (version != null) {
+				Directory.CreateDirectory(Program.ModsDisabledPath);
+				List<string> disdirs = new List<string>();
+				foreach (FileInfo fi in version) {
+					if (File.Exists(Program.GamePath + fi.Path)) {
+						string path = fi.Path.Replace('/', '\\');
+						bool hasSubdir = path.Contains('\\');
+						path = Program.ModsDisabledPath + path;
+						if (hasSubdir) {
+							string disdir = path.Substring(0, path.LastIndexOf('\\'));
+							if (!disdirs.Contains(disdir)) {
+								Directory.CreateDirectory(disdir);
+								disdirs.Add(disdir);
+							}
 						}
+						File.Move(Program.GamePath + fi.Path, path);
 					}
-					File.Move(Program.GamePath + fi.Path, path);
 				}
 			}
 		}

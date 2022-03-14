@@ -88,10 +88,11 @@ namespace YobaLoncher {
 			List<string> paths = new List<string>();
 			try {
 				string steamInstallPath = "";
-				using (RegistryKey view64 = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)) {
-					using (RegistryKey clsid64 = view64.OpenSubKey(@"SOFTWARE\WOW6432Node\Valve\Steam")) {
-						if (clsid64 != null) {
-							steamInstallPath = (string)clsid64.GetValue("InstallPath");
+				bool is64 = Environment.Is64BitOperatingSystem;
+				using (RegistryKey view = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, is64 ? RegistryView.Registry64 : RegistryView.Registry32)) {
+					using (RegistryKey clsid = view.OpenSubKey(is64 ? @"SOFTWARE\WOW6432Node\Valve\Steam" : @"SOFTWARE\Valve\Steam")) {
+						if (clsid != null) {
+							steamInstallPath = (string)clsid.GetValue("InstallPath");
 						}
 					}
 				}
@@ -406,15 +407,40 @@ namespace YobaLoncher {
 						wc_.DownloadProgressChanged += new DownloadProgressChangedEventHandler(OnDownloadProgressChanged);
 #if DEBUG
 #else
-						if (YU.stringHasText(Program.LoncherSettings.LoncherHash)) {
+						string winVer = "";
+						using (RegistryKey view = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)) {
+							using (RegistryKey clsid = view.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion")) {
+								winVer = (string)clsid.GetValue("ProductName"); // Тупо, но это единственный способ добыть реальный номер версии
+							}
+						}
+						int verIdx = 1;
+						if (winVer.StartsWith("Windows 11")) {
+							verIdx = 3;
+						}
+						else if (winVer.StartsWith("Windows 10")) {
+							verIdx = 2;
+						}
+						string loncherHash = "";
+						string loncherUrl = "";
+						string[] availKeys = { "Any", "Win7", "Win10", "Win11" };
+						while (verIdx > -1) {
+							if (Program.LoncherSettings.LoncherVersions.ContainsKey(availKeys[verIdx])) {
+								LoncherForOSInfo loncherForOSInfo = Program.LoncherSettings.LoncherVersions[availKeys[verIdx]];
+								loncherHash = loncherForOSInfo.LoncherHash;
+								loncherUrl = loncherForOSInfo.LoncherExe;
+								break;
+							}
+							verIdx--;
+						}
+						if (YU.stringHasText(loncherHash)) {
 							string selfHash = FileChecker.GetFileMD5(Application.ExecutablePath);
 
-							if (!Program.LoncherSettings.LoncherHash.ToUpper().Equals(selfHash)) {
-								if (YU.stringHasText(Program.LoncherSettings.LoncherExe)) {
+							if (!loncherHash.ToUpper().Equals(selfHash)) {
+								if (YU.stringHasText(loncherUrl)) {
 									string newLoncherPath = Application.ExecutablePath + ".new";
 									string appname = Application.ExecutablePath;
 									appname = appname.Substring(appname.LastIndexOf('\\') + 1);
-									await loadFile(Program.LoncherSettings.LoncherExe, newLoncherPath, Locale.Get("UpdatingLoncher"));
+									await loadFile(loncherUrl, newLoncherPath, Locale.Get("UpdatingLoncher"));
 
 									string newHash = FileChecker.GetFileMD5(newLoncherPath);
 
@@ -446,7 +472,7 @@ namespace YobaLoncher {
 #endif
 					}
 					catch (Exception ex) {
-						YU.ErrorAndKill(Locale.Get("CannotUpdateLoncher") + ":\r\n" + ex.Message + "\r\n" + ex.StackTrace);
+						YU.ErrorAndKill(Locale.Get("CannotUpdateLoncher") + ":\r\n" + ex.Message, ex);
 						return;
 					}
 					LauncherData.LauncherDataRaw launcherDataRaw = Program.LoncherSettings.RAW;
@@ -518,7 +544,7 @@ namespace YobaLoncher {
 						logDeltaTicks("images");
 					}
 					catch (Exception ex) {
-						YU.ErrorAndKill(Locale.Get("CannotGetImages") + ":\r\n" + ex.Message);
+						YU.ErrorAndKill(Locale.Get("CannotGetImages") + ":\r\n" + ex.Message, ex);
 						return;
 					}
 					if (Program.LoncherSettings.Fonts != null) {
@@ -553,7 +579,7 @@ namespace YobaLoncher {
 								logDeltaTicks("fonts");
 							}
 							catch (Exception ex) {
-								YU.ErrorAndKill(Locale.Get("CannotGetFonts") + ":\r\n" + ex.Message);
+								YU.ErrorAndKill(Locale.Get("CannotGetFonts") + ":\r\n" + ex.Message, ex);
 								return;
 							}
 						}
@@ -611,20 +637,20 @@ namespace YobaLoncher {
 									showMainForm();
 								}
 								catch (Exception ex) {
-									YU.ErrorAndKill(Locale.Get("CannotCheckFiles") + ":\r\n" + ex.Message);
+									YU.ErrorAndKill(Locale.Get("CannotCheckFiles") + ":\r\n" + ex.Message, ex);
 								}
 							}
 						}
 						catch (Exception ex) {
-							YU.ErrorAndKill(Locale.Get("CannotParseConfig") + ":\r\n" + ex.Message);
+							YU.ErrorAndKill(Locale.Get("CannotParseConfig") + ":\r\n" + ex.Message, ex);
 						}
 					}
 					catch (Exception ex) {
-						YU.ErrorAndKill(Locale.Get("CannotLoadIcon") + ":\r\n" + ex.Message);
+						YU.ErrorAndKill(Locale.Get("CannotLoadIcon") + ":\r\n" + ex.Message, ex);
 					}
 				}
 				catch (Exception ex) {
-					YU.ErrorAndKill(Locale.Get("CannotParseSettings") + ":\r\n" + ex.Message);
+					YU.ErrorAndKill(Locale.Get("CannotParseSettings") + ":\r\n" + ex.Message, ex);
 				}
 			}
 			catch (Exception ex) {
@@ -713,7 +739,7 @@ namespace YobaLoncher {
 					}
 				}
 				catch (Exception ex) {
-					YU.ErrorAndKill(Locale.Get("CannotGetImages") + ":\r\n" + ex.Message);
+					YU.ErrorAndKill(Locale.Get("CannotGetImages") + ":\r\n" + ex.Message, ex);
 					return;
 				}
 				if (Program.LoncherSettings.Fonts != null) {
@@ -738,7 +764,7 @@ namespace YobaLoncher {
 							}
 						}
 						catch (Exception ex) {
-							YU.ErrorAndKill(Locale.Get("CannotGetFonts") + ":\r\n" + ex.Message);
+							YU.ErrorAndKill(Locale.Get("CannotGetFonts") + ":\r\n" + ex.Message, ex);
 							return;
 						}
 					}
@@ -761,20 +787,20 @@ namespace YobaLoncher {
 								showMainForm();
 							}
 							catch (Exception ex) {
-								YU.ErrorAndKill(Locale.Get("CannotCheckFiles") + ":\r\n" + ex.Message);
+								YU.ErrorAndKill(Locale.Get("CannotCheckFiles") + ":\r\n" + ex.Message, ex);
 							}
 						}
 					}
 					catch (Exception ex) {
-						YU.ErrorAndKill(Locale.Get("CannotParseConfig") + ":\r\n" + ex.Message);
+						YU.ErrorAndKill(Locale.Get("CannotParseConfig") + ":\r\n" + ex.Message, ex);
 					}
 				}
 				catch (Exception ex) {
-					YU.ErrorAndKill(Locale.Get("CannotLoadIcon") + ":\r\n" + ex.Message);
+					YU.ErrorAndKill(Locale.Get("CannotLoadIcon") + ":\r\n" + ex.Message, ex);
 				}
 			}
 			catch (Exception ex) {
-				YU.ErrorAndKill(Locale.Get("CannotParseSettings") + ":\r\n" + ex.Message);
+				YU.ErrorAndKill(Locale.Get("CannotParseSettings") + ":\r\n" + ex.Message, ex);
 			}
 		}
 
